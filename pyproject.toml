@@ -1,0 +1,21 @@
+# ponytail: one project for all Python services; split into a uv workspace when deploy images diverge.
+[project]
+name = "edgeos"
+version = "0.1.0"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "fastapi>=0.115",
+    "pydantic>=2.9",
+    "uvicorn>=0.32",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "psycopg[binary]>=3.2",
+    "httpx>=0.28.1",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["services", "db"]
