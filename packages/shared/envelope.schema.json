@@ -1,0 +1,293 @@
+{
+  "$defs": {
+    "Confidence": {
+      "additionalProperties": false,
+      "properties": {
+        "level": {
+          "enum": [
+            "high",
+            "medium",
+            "low"
+          ],
+          "title": "Level",
+          "type": "string"
+        },
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "level",
+        "reason"
+      ],
+      "title": "Confidence",
+      "type": "object"
+    },
+    "Finding": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "text": {
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        },
+        "metric_ids": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Metric Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "text",
+        "metric_ids"
+      ],
+      "title": "Finding",
+      "type": "object"
+    },
+    "Flag": {
+      "additionalProperties": false,
+      "properties": {
+        "severity": {
+          "enum": [
+            "info",
+            "watch",
+            "alert"
+          ],
+          "title": "Severity",
+          "type": "string"
+        },
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "metric_ids": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Metric Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "severity",
+        "reason"
+      ],
+      "title": "Flag",
+      "type": "object"
+    },
+    "Gap": {
+      "additionalProperties": false,
+      "properties": {
+        "item": {
+          "minLength": 1,
+          "title": "Item",
+          "type": "string"
+        },
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "item",
+        "reason"
+      ],
+      "title": "Gap",
+      "type": "object"
+    },
+    "Metric": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "title": "Value"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unit"
+        },
+        "formula_id": {
+          "minLength": 1,
+          "title": "Formula Id",
+          "type": "string"
+        },
+        "source_query_id": {
+          "minLength": 1,
+          "title": "Source Query Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "value",
+        "formula_id",
+        "source_query_id"
+      ],
+      "title": "Metric",
+      "type": "object"
+    },
+    "Source": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "dataset",
+            "filing",
+            "api"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "ref": {
+          "minLength": 1,
+          "title": "Ref",
+          "type": "string"
+        },
+        "retrieved_at": {
+          "format": "date-time",
+          "title": "Retrieved At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "ref",
+        "retrieved_at"
+      ],
+      "title": "Source",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "agent_id": {
+      "enum": [
+        "M1",
+        "M2",
+        "M3",
+        "M4",
+        "M5",
+        "M6",
+        "M7",
+        "MF1",
+        "MF2",
+        "MF3"
+      ],
+      "title": "Agent Id",
+      "type": "string"
+    },
+    "subject": {
+      "minLength": 1,
+      "title": "Subject",
+      "type": "string"
+    },
+    "as_of": {
+      "format": "date-time",
+      "title": "As Of",
+      "type": "string"
+    },
+    "metrics": {
+      "items": {
+        "$ref": "#/$defs/Metric"
+      },
+      "title": "Metrics",
+      "type": "array"
+    },
+    "findings": {
+      "items": {
+        "$ref": "#/$defs/Finding"
+      },
+      "title": "Findings",
+      "type": "array"
+    },
+    "flags": {
+      "items": {
+        "$ref": "#/$defs/Flag"
+      },
+      "title": "Flags",
+      "type": "array"
+    },
+    "sources": {
+      "items": {
+        "$ref": "#/$defs/Source"
+      },
+      "title": "Sources",
+      "type": "array"
+    },
+    "confidence": {
+      "$ref": "#/$defs/Confidence"
+    },
+    "gaps": {
+      "items": {
+        "$ref": "#/$defs/Gap"
+      },
+      "title": "Gaps",
+      "type": "array"
+    }
+  },
+  "required": [
+    "agent_id",
+    "subject",
+    "as_of",
+    "metrics",
+    "findings",
+    "flags",
+    "sources",
+    "confidence",
+    "gaps"
+  ],
+  "title": "Envelope",
+  "type": "object"
+}
