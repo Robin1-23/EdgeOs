@@ -107,8 +107,9 @@ def parse(text: str, today: date | None = None) -> Parsed:
     return out
 
 
-def load(conn: psycopg.Connection, parsed: Parsed, min_schemes: int = MIN_SCHEMES) -> dict:
+def load(conn: psycopg.Connection, parsed: Parsed, min_schemes: int | None = None) -> dict:
     """Upsert in one transaction; rows are written only when a value actually changed."""
+    min_schemes = MIN_SCHEMES if min_schemes is None else min_schemes
     if len(parsed.schemes) < min_schemes:
         raise PipelineError(f"only {len(parsed.schemes)} valid schemes (< {min_schemes}); refusing to load a partial file")
 
@@ -148,9 +149,9 @@ def load(conn: psycopg.Connection, parsed: Parsed, min_schemes: int = MIN_SCHEME
     }
 
 
-def run(conn: psycopg.Connection, file: Path | None = None) -> dict:
+def run(conn: psycopg.Connection, file: Path | None = None, today: date | None = None) -> dict:
     text = file.read_text(encoding="utf-8") if file else fetch()
-    return load(conn, parse(text))
+    return load(conn, parse(text, today))
 
 
 if __name__ == "__main__":
