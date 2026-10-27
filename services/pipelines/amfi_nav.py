@@ -5,8 +5,6 @@ Usage: uv run python -m services.pipelines.amfi_nav [--file PATH]
 
 import argparse
 import re
-import time
-import urllib.request
 from collections import Counter
 from dataclasses import dataclass, field
 from datetime import date, datetime
@@ -16,6 +14,7 @@ from pathlib import Path
 import psycopg
 
 from db import DATABASE_URL
+from services.pipelines.common import PipelineError, http_get
 
 URL = "https://www.amfiindia.com/spages/NAVAll.txt"
 HEADER = "Scheme Code;ISIN Div Payout/ ISIN Growth;ISIN Div Reinvestment;Scheme Name;Plan;Option;Net Asset Value;Date"
@@ -27,10 +26,6 @@ MIN_SCHEMES = 5000  # full file has ~14k; fewer means a truncated or broken down
 SCHEME_COLS = "amfi_code, name, amc, category, scheme_type, plan, option, isin_growth, isin_reinvest"
 
 
-class PipelineError(Exception):
-    pass
-
-
 @dataclass
 class Parsed:
     schemes: list[tuple] = field(default_factory=list)  # SCHEME_COLS order
@@ -38,17 +33,10 @@ class Parsed:
     skipped: Counter = field(default_factory=Counter)  # reason -> rows
 
 
-def fetch(url: str = URL, attempts: int = 3) -> str:
-    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (EdgeOS data pipeline)"})
-    for i in range(attempts):
-        try:
-            with urllib.request.urlopen(req, timeout=60) as resp:
-                body = resp.read()
-            break
-        except OSError as e:  # URLError, HTTPError, timeouts
-            if i == attempts - 1:
-                raise PipelineError(f"download failed after {attempts} attempts: {e}") from e
-            time.sleep(5 * 2**i)
+def fetch(url: str = URL) -> str:
+    body = http_get(url)
+    if body is None:
+        raise PipelineError(f"{url} returned 404")
     try:
         return body.decode("utf-8")
     except UnicodeDecodeError as e:
