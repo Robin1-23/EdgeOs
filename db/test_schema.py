@@ -1,26 +1,13 @@
-"""Applies 001_core.sql in a throwaway schema and inserts a row per table. Needs `docker compose up db`."""
-
-import os
-from pathlib import Path
+"""Applies all migrations in a throwaway schema and inserts a row per table. Needs `docker compose up db`."""
 
 import psycopg
 import pytest
 
-URL = os.environ.get("DATABASE_URL", "postgresql://edgeos:edgeos@localhost:5433/edgeos")
-SQL = (Path(__file__).parent / "migrations/001_core.sql").read_text()
-
 
 @pytest.fixture
-def cur():
-    try:
-        conn = psycopg.connect(URL, connect_timeout=3)
-    except psycopg.OperationalError:
-        pytest.skip("Postgres not running")
-    with conn, conn.cursor() as cur:
-        cur.execute("CREATE SCHEMA schema_test; SET search_path TO schema_test, public")
-        cur.execute(SQL)
+def cur(db_conn):
+    with db_conn.cursor() as cur:
         yield cur
-        conn.rollback()
 
 
 def test_core_tables_accept_rows(cur):

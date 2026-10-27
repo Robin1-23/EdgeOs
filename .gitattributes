@@ -1,0 +1,2 @@
+# Keep sample files byte-exact (real AMFI/NSE files use CRLF).
+**/fixtures/** -text

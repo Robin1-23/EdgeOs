@@ -1,0 +1,42 @@
+Scheme Code;ISIN Div Payout/ ISIN Growth;ISIN Div Reinvestment;Scheme Name;Plan;Option;Net Asset Value;Date
+ 
+Open Ended Schemes(Children’s Fund - Childrens' Fund)
+ 
+Axis Mutual Fund
+ 
+135762;INF846K01WO1;-;Axis Children's Fund;Direct Plan;Growth Option;28.9301;27-Oct-2026
+135765;INF846K01WP8;-;Axis Children's Fund;Direct Plan;IDCW Option;26.6498;27-Oct-2026
+135759;INF846K01WJ1;-;Axis Children's Fund;Regular Plan;Growth Option;25.1678;27-Oct-2026
+135760;INF846K01WK9;-;Axis Children's Fund;Regular Plan;IDCW Option;23.2193;27-Oct-2026
+Open Ended Schemes(Equity Scheme - Large Cap Fund)
+ 
+Aditya Birla Sun Life Mutual Fund
+ 
+119528;INF209K01YY7;-;Aditya Birla Sun Life Large Cap Fund;Direct Plan;GROWTH;546.48;27-Oct-2026
+119527;INF209K01YX9;INF209K01YW1;Aditya Birla Sun Life Large Cap Fund;;;87.89;27-Oct-2026
+103174;INF209K01BR9;-;Aditya Birla Sun Life Large Cap Fund;Regular Plan;GROWTH;490.42;27-Oct-2026
+103173;INF209K01BO6;INF209K01EC5;Aditya Birla Sun Life Large Cap Fund;Regular Plan;IDCW;36.50;27-Oct-2026
+ 
+Bajaj Finserv Mutual Fund
+ 
+Interval Fund Schemes(Income)
+ 
+Kotak Mahindra Mutual Fund
+ 
+146839;-;INF174KA1DD0;Kotak Monthly Interval Plan Series 4;;;10.0087785;17-Apr-2019
+146837;INF174KA1DB4;-;Kotak Monthly Interval Plan Series 4;;;0.0001;22-Apr-2019
+Close Ended Schemes(ELSS)
+ 
+Bank of India Mutual Fund
+ 
+141950;INF761K01DS3;-;BANK OF INDIA MID CAP TAX FUND SERIES 1;Direct Plan;Growth;29.64;27-Oct-2026
+Open Ended Schemes(Test - Bad Rows)
+ 
+Test Mutual Fund
+ 
+900001;INF000000001;-;Bad NAV NA;Direct Plan;Growth;N.A.;27-Oct-2026
+900002;INF000000002;-;Bad NAV Zero;Direct Plan;Growth;0;27-Oct-2026
+900003;INF000000003;-;Bad Date;Direct Plan;Growth;10.5;31-Feb-2026
+900004;INF000000004;-;Too Few Fields;Direct Plan;10.5;27-Oct-2026
+90000X;INF000000005;-;Bad Code;Direct Plan;Growth;10.5;27-Oct-2026
+900006;INF000000006;-;Future Date;Direct Plan;Growth;10.5;27-Oct-2099
