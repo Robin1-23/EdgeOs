@@ -18,7 +18,10 @@ from services.pipelines.common import PipelineError, http_get
 
 URL = "https://www.amfiindia.com/spages/NAVAll.txt"
 HEADER = "Scheme Code;ISIN Div Payout/ ISIN Growth;ISIN Div Reinvestment;Scheme Name;Plan;Option;Net Asset Value;Date"
-SECTION = re.compile(r"^(Open Ended|Close Ended|Interval Fund) Schemes\((.+)\)$")
+HISTORY_HEADER = "Scheme Code;NAV Name;Plan;Option;ISIN Div Payout/ISIN Growth;ISIN Div Reinvestment;Net Asset Value;Date"
+# Column positions of (code, isin_growth, isin_reinvest, name, plan, option, nav, date) per format.
+COLUMNS = {HEADER: (0, 1, 2, 3, 4, 5, 6, 7), HISTORY_HEADER: (0, 4, 5, 1, 2, 3, 6, 7)}
+SECTION = re.compile(r"^(Open Ended|Close Ended|Interval Fund) Schemes\s*\(\s*(.+?)\s*\)$")  # history adds spaces
 SCHEME_TYPE = {"Open Ended": "open", "Close Ended": "close", "Interval Fund": "interval"}
 PLAN = {"Direct Plan": "direct", "Regular Plan": "regular"}
 MIN_SCHEMES = 5000  # full file has ~14k; fewer means a truncated or broken download
@@ -43,12 +46,12 @@ def fetch(url: str = URL) -> str:
         raise PipelineError(f"file is not UTF-8: {e}") from e
 
 
-def _parse_row(line: str, today: date) -> tuple | str:
+def _parse_row(line: str, today: date, cols: tuple[int, ...]) -> tuple | str:
     """Return (code, isin_growth, isin_reinvest, name, plan, option, nav, nav_date) or a skip reason."""
     f = [x.strip() for x in line.split(";")]
     if len(f) != 8:
         return "field_count"
-    code, isin_g, isin_r, name, plan, option, nav_s, date_s = f
+    code, isin_g, isin_r, name, plan, option, nav_s, date_s = (f[i] for i in cols)
     if not code.isdigit():
         return "bad_code"
     if plan and plan not in PLAN:
@@ -72,12 +75,14 @@ def _parse_row(line: str, today: date) -> tuple | str:
 
 
 def parse(text: str, today: date | None = None) -> Parsed:
+    """Daily NAVAll.txt (one NAV per scheme) or the NAV history report (one row per scheme per day)."""
     today = today or date.today()
     lines = text.lstrip("﻿").splitlines()
-    if not lines or lines[0].strip() != HEADER:
+    cols = COLUMNS.get(lines[0].strip()) if lines else None
+    if cols is None:
         raise PipelineError(f"unexpected header: {(lines[0][:120] if lines else '<empty file>')!r}")
 
-    out, seen = Parsed(), set()
+    out, seen, seen_navs = Parsed(), set(), set()
     scheme_type = category = amc = None
     for line in lines[1:]:
         line = line.strip()
@@ -91,29 +96,39 @@ def parse(text: str, today: date | None = None) -> Parsed:
                 amc = line
             continue
 
-        row = _parse_row(line, today)
+        row = _parse_row(line, today, cols)
         if isinstance(row, str):
             out.skipped[row] += 1
             continue
         code, isin_g, isin_r, name, plan, option, nav, nav_date = row
         if category is None or amc is None:
             out.skipped["no_section"] += 1
-        elif code in seen:
-            out.skipped["duplicate_code"] += 1
+        elif (code, nav_date) in seen_navs:
+            out.skipped["duplicate_nav"] += 1
         else:
-            seen.add(code)
-            out.schemes.append((code, name, amc, category, scheme_type, plan, option, isin_g, isin_r))
+            seen_navs.add((code, nav_date))
             out.navs.append((code, nav_date, nav))
+            if code not in seen:
+                seen.add(code)
+                out.schemes.append((code, name, amc, category, scheme_type, plan, option, isin_g, isin_r))
     return out
 
 
-def load(conn: psycopg.Connection, parsed: Parsed, min_schemes: int | None = None) -> dict:
-    """Upsert in one transaction; rows are written only when a value actually changed."""
+def load(conn: psycopg.Connection, parsed: Parsed, min_schemes: int | None = None, update_schemes: bool = True) -> dict:
+    """Upsert in one transaction; rows are written only when a value actually changed.
+    update_schemes=False (history backfill) only inserts missing schemes: old reports carry old names and
+    categories that must not overwrite the current master."""
     min_schemes = MIN_SCHEMES if min_schemes is None else min_schemes
     if len(parsed.schemes) < min_schemes:
         raise PipelineError(f"only {len(parsed.schemes)} valid schemes (< {min_schemes}); refusing to load a partial file")
 
     set_cols = [c.strip() for c in SCHEME_COLS.split(",")][1:]
+    on_conflict = (
+        f"""DO UPDATE SET {", ".join(f"{c} = EXCLUDED.{c}" for c in set_cols)}
+            WHERE ({", ".join(f"fund_schemes.{c}" for c in set_cols)})
+                  IS DISTINCT FROM ({", ".join(f"EXCLUDED.{c}" for c in set_cols)})"""
+        if update_schemes else "DO NOTHING"
+    )
     with conn.transaction(), conn.cursor() as cur:
         cur.execute("CREATE TEMP TABLE _schemes (LIKE fund_schemes); CREATE TEMP TABLE _navs (LIKE fund_nav)")
         with cur.copy(f"COPY _schemes ({SCHEME_COLS}) FROM STDIN") as cp:
@@ -125,9 +140,7 @@ def load(conn: psycopg.Connection, parsed: Parsed, min_schemes: int | None = Non
 
         cur.execute(
             f"""INSERT INTO fund_schemes ({SCHEME_COLS}) SELECT {SCHEME_COLS} FROM _schemes
-                ON CONFLICT (amfi_code) DO UPDATE SET {", ".join(f"{c} = EXCLUDED.{c}" for c in set_cols)}
-                WHERE ({", ".join(f"fund_schemes.{c}" for c in set_cols)})
-                      IS DISTINCT FROM ({", ".join(f"EXCLUDED.{c}" for c in set_cols)})
+                ON CONFLICT (amfi_code) {on_conflict}
                 RETURNING xmax = 0"""
         )
         schemes = Counter(inserted for (inserted,) in cur.fetchall())

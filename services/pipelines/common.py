@@ -40,14 +40,15 @@ def http_get(url: str, attempts: int = 3) -> bytes | None:
 
 
 
-def cached_get(url: str, cache_dir: Path) -> bytes | None:
-    """http_get through a local file cache, so reruns and backfills never download twice."""
-    cached = cache_dir / url.rsplit("/", 1)[1]
+def cached_get(url: str, cache_dir: Path, name: str | None = None, cache: bool = True) -> bytes | None:
+    """http_get through a local file cache, so reruns and backfills never download twice.
+    name overrides the URL basename; cache=False skips writing (e.g. a period still being published)."""
+    cached = cache_dir / (name or url.rsplit("/", 1)[1])
     if cached.exists():
         return cached.read_bytes()
     data = http_get(url)
     time.sleep(POLITE_PAUSE)
-    if data is not None:
+    if data is not None and cache:
         cached.parent.mkdir(parents=True, exist_ok=True)
         cached.write_bytes(data)
     return data

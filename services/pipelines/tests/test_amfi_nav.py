@@ -57,10 +57,10 @@ def test_parse_section_without_amc_line_keeps_previous_amc():
     assert scheme[2:4] == ("ICICI Prudential Mutual Fund", "Growth")
 
 
-def test_parse_duplicate_code_keeps_first():
+def test_parse_duplicate_nav_keeps_first():
     text = f"{HEADER}\nOpen Ended Schemes(X)\nAMC\n100001;-;-;A;;;10;27-Oct-2026\n100001;-;-;A;;;11;27-Oct-2026\n"
     p = parse(text, TODAY)
-    assert p.navs == [("100001", date(2026, 10, 27), Decimal("10"))] and p.skipped == {"duplicate_code": 1}
+    assert p.navs == [("100001", date(2026, 10, 27), Decimal("10"))] and p.skipped == {"duplicate_nav": 1}
 
 
 def count(conn, table):
