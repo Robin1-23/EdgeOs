@@ -39,13 +39,14 @@ def test_dev_local_reads_cached_files_for_both_nse_formats(raw_dir):
     assert len(dev.fund_navs_month(2026, 10, date(2026, 10, 28)).navs) == 10
     assert dev.fund_navs_month(2026, 9, date(2026, 10, 28)) is None
     assert dev.fundamentals("INE002A01018") is None  # no permitted financials source in dev
+    assert dev.classification() is None
 
 
 def test_licensed_vendor_stub_fails_loudly():
     vendor = LicensedVendor("cmots")
     for call in (lambda: vendor.eod_prices(date(2026, 10, 27)), lambda: vendor.index_closes(date(2026, 10, 27)),
                  lambda: vendor.fund_navs_latest(date(2026, 10, 27)), lambda: vendor.fund_navs_month(2026, 10, date(2026, 10, 28)),
-                 lambda: vendor.fundamentals("INE002A01018")):
+                 lambda: vendor.fundamentals("INE002A01018"), vendor.classification):
         with pytest.raises(NotImplementedError, match="cmots"):
             call()
 

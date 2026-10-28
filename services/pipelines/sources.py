@@ -12,7 +12,7 @@ from datetime import date
 from pathlib import Path
 from typing import Protocol
 
-from services.pipelines import amfi_nav, fundamentals, nse_bhavcopy, nse_indices
+from services.pipelines import amfi_nav, classification, fundamentals, nse_bhavcopy, nse_indices
 from services.pipelines.common import RAW_DATA_DIR, PipelineError
 
 
@@ -34,6 +34,9 @@ class SourceAdapter(Protocol):
     def fundamentals(self, isin: str) -> fundamentals.Parsed | None:
         """All quarterly/annual financials for one company, mapped to fundamentals.ITEMS (build() validates);
         None when the source has nothing for it."""
+
+    def classification(self) -> classification.Parsed | None:
+        """Sector and industry for every covered security (classification.build validates); None if unavailable."""
 
 
 class DevLocal:
@@ -85,6 +88,9 @@ class DevLocal:
     def fundamentals(self, isin: str) -> fundamentals.Parsed | None:
         return None  # no permitted source was ever downloaded; tests use fixtures, production uses the vendor
 
+    def classification(self) -> classification.Parsed | None:
+        return None  # same: no permitted classification source in dev
+
 
 class LicensedVendor:
     """Stub for a licensed feed (e.g. Accord/ACE, CMOTS, NSE Data & Analytics). Implement each method by mapping
@@ -114,6 +120,9 @@ class LicensedVendor:
 
     def fundamentals(self, isin: str) -> fundamentals.Parsed | None:
         self._todo("fundamentals", "fundamentals.build(records) over fundamentals.ITEMS")
+
+    def classification(self) -> classification.Parsed | None:
+        self._todo("classification", "classification.build((isin, sector, industry) records)")
 
 
 ADAPTERS: dict[str, type] = {"dev_local": DevLocal, "licensed_vendor": LicensedVendor}

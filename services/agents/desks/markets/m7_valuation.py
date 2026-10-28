@@ -244,6 +244,9 @@ def load_inputs(conn: psycopg.Connection, subject: str, as_of: date):
         _, _, p_rows, p_prov = load_financials(conn, p_isin, as_of)
         peer_src |= set(p_prov["financials"])
         peers[p_isin] = (p_rows, _prices(conn, p_isin, as_of - timedelta(days=400), as_of, peer_src))
+    if peers:  # the peer group itself comes from the classification feed
+        (cls_src,) = conn.execute("SELECT classification_source FROM securities WHERE isin = %s", (isin,)).fetchone()
+        peer_src |= {cls_src} if cls_src else {"unclassified"}  # unknown provider -> never public
     return isin, symbol, rows, prices, peers, {"valuation": sorted(src), "peers": sorted(peer_src)}
 
 

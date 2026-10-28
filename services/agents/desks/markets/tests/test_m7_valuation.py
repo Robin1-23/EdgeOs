@@ -93,7 +93,8 @@ def test_run_with_industry_peers(db_conn):
     rows = valuation_records()
     for i, (isin, symbol, close) in enumerate(((ISIN, "ACME", 300.0), ("INE000000102", "P1", 150.0),
                                                ("INE000000110", "P2", 200.0), ("INE000000128", "P3", 450.0))):
-        (sid,) = db_conn.execute("INSERT INTO securities (isin, nse_symbol, name, industry, last_seen) VALUES (%s, %s, %s, 'Widgets', %s)"
+        (sid,) = db_conn.execute("INSERT INTO securities (isin, nse_symbol, name, industry, classification_source, last_seen)"
+                                 " VALUES (%s, %s, %s, 'Widgets', 'dev_local', %s)"
                                  " RETURNING id", (isin, symbol, symbol, AS_OF)).fetchone()
         for d, c in prices(close):
             db_conn.execute("INSERT INTO prices_daily (security_id, exchange, trade_date, open, high, low, close, volume)"
