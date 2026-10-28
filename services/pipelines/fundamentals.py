@@ -42,6 +42,7 @@ ITEMS = {
     "cash_and_equivalents": ("bs", CRORE, "cash, cash equivalents and other bank balances"),
     "total_assets": ("bs", CRORE, "total assets"),
     "shares_outstanding": ("bs", "cr shares", "equity shares outstanding at period end, in crore (not adjusted later)"),
+    "contingent_liabilities": ("bs", CRORE, "contingent liabilities not provided for (notes to accounts)"),
     # cash flow (annual, half-yearly when published)
     "cfo": ("cf", CRORE, "net cash from operating activities"),
     "capex": ("cf", CRORE, "purchase of property, plant, equipment and intangibles (outflow, positive)"),

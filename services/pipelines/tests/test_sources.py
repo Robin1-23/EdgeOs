@@ -41,6 +41,7 @@ def test_dev_local_reads_cached_files_for_both_nse_formats(raw_dir):
     assert dev.fundamentals("INE002A01018") is None  # no permitted financials source in dev
     assert dev.classification() is None
     assert dev.fund_holdings(2026, 9) is None and dev.index_constituents(2026, 9) is None and dev.expense_ratios(2026, 9) is None
+    assert dev.shareholding("INE002A01018") is None and dev.corporate_events("INE002A01018") is None
 
 
 def test_licensed_vendor_stub_fails_loudly():
@@ -49,7 +50,8 @@ def test_licensed_vendor_stub_fails_loudly():
                  lambda: vendor.fund_navs_latest(date(2026, 10, 27)), lambda: vendor.fund_navs_month(2026, 10, date(2026, 10, 28)),
                  lambda: vendor.fundamentals("INE002A01018"), vendor.classification,
                  lambda: vendor.fund_holdings(2026, 9), lambda: vendor.index_constituents(2026, 9),
-                 lambda: vendor.expense_ratios(2026, 9)):
+                 lambda: vendor.expense_ratios(2026, 9), lambda: vendor.shareholding("INE002A01018"),
+                 lambda: vendor.corporate_events("INE002A01018")):
         with pytest.raises(NotImplementedError, match="cmots"):
             call()
 

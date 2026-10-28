@@ -1,6 +1,6 @@
 from datetime import date
 
-from services.pipelines import amfi_nav, classification, fund_disclosures, fundamentals, nse_bhavcopy, nse_indices
+from services.pipelines import amfi_nav, classification, fund_disclosures, fundamentals, governance, nse_bhavcopy, nse_indices
 
 
 class FakeAdapter:
@@ -8,8 +8,10 @@ class FakeAdapter:
     Days not in the dicts return None (holiday / not available); every call is recorded."""
 
     def __init__(self, name="dev_local", prices=None, indices=None, navs_latest=None, months=None, financials=None,
-                 sectors=None, holdings=None, constituents=None, ters=None):
+                 sectors=None, holdings=None, constituents=None, ters=None, shareholding=None, events=None):
         self.name = name
+        # isin -> raw shareholding records; isin -> (event records, covered_until)
+        self.shareholding_recs, self.events = shareholding or {}, events or {}
         # (year, month) -> raw records for fund_disclosures.build_*
         self.holdings, self.constituents, self.ters = holdings or {}, constituents or {}, ters or {}
         self.sectors = sectors  # raw (isin, sector, industry) records for classification.build, or None
@@ -59,3 +61,13 @@ class FakeAdapter:
     def expense_ratios(self, year: int, month: int):
         recs = self.ters.get((year, month))
         return fund_disclosures.build_expense_ratios(recs) if recs is not None else None
+
+    def shareholding(self, isin: str):
+        recs = self.shareholding_recs.get(isin)
+        return governance.build_shareholding(recs) if recs is not None else None
+
+    def corporate_events(self, isin: str):
+        if isin not in self.events:
+            return None
+        recs, covered_until = self.events[isin]
+        return governance.build_events(recs, covered_until)

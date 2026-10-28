@@ -12,7 +12,7 @@ from datetime import date
 from pathlib import Path
 from typing import Protocol
 
-from services.pipelines import amfi_nav, classification, fund_disclosures, fundamentals, nse_bhavcopy, nse_indices
+from services.pipelines import amfi_nav, classification, fund_disclosures, fundamentals, governance, nse_bhavcopy, nse_indices
 from services.pipelines.common import RAW_DATA_DIR, PipelineError
 
 
@@ -46,6 +46,13 @@ class SourceAdapter(Protocol):
 
     def expense_ratios(self, year: int, month: int) -> fund_disclosures.Parsed | None:
         """Total expense ratios in force during the month (fund_disclosures.build_expense_ratios)."""
+
+    def shareholding(self, isin: str) -> governance.Parsed | None:
+        """Quarterly promoter holding and pledge for one company (governance.build_shareholding)."""
+
+    def corporate_events(self, isin: str) -> governance.Parsed | None:
+        """Auditor resignations/appointments for one company with the date the source covered it up to
+        (governance.build_events)."""
 
 
 class DevLocal:
@@ -109,6 +116,12 @@ class DevLocal:
     def expense_ratios(self, year: int, month: int) -> fund_disclosures.Parsed | None:
         return None
 
+    def shareholding(self, isin: str) -> governance.Parsed | None:
+        return None  # exchange shareholding filings: exchange terms forbid automated collection
+
+    def corporate_events(self, isin: str) -> governance.Parsed | None:
+        return None
+
 
 class LicensedVendor:
     """Stub for a licensed feed (e.g. Accord/ACE, CMOTS, NSE Data & Analytics). Implement each method by mapping
@@ -150,6 +163,12 @@ class LicensedVendor:
 
     def expense_ratios(self, year: int, month: int) -> fund_disclosures.Parsed | None:
         self._todo("expense_ratios", "fund_disclosures.build_expense_ratios(records)")
+
+    def shareholding(self, isin: str) -> governance.Parsed | None:
+        self._todo("shareholding", "governance.build_shareholding(records)")
+
+    def corporate_events(self, isin: str) -> governance.Parsed | None:
+        self._todo("corporate_events", "governance.build_events(records, covered_until)")
 
 
 ADAPTERS: dict[str, type] = {"dev_local": DevLocal, "licensed_vendor": LicensedVendor}
