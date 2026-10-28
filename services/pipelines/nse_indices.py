@@ -1,24 +1,22 @@
-"""NSE daily index closes: ind_close_all_DDMMYYYY.csv -> index_prices. Idempotent.
+"""NSE-format daily index closes (ind_close_all CSV) parser + loader -> index_prices. Idempotent.
 
+Rows come from a source adapter (services/pipelines/sources.py); this module never downloads.
 Usage:
-  uv run python -m services.pipelines.nse_indices --date 2026-10-27
+  uv run python -m services.pipelines.nse_indices --date 2026-10-27 [--source dev_local]
   uv run python -m services.pipelines.nse_indices --from 2016-10-01 --to 2026-10-27   # backfill
-  uv run python -m services.pipelines.nse_indices --date 2026-10-27 --file PATH.csv
 """
 
 import csv
 import io
 from collections import Counter
-from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 
 import psycopg
 
-from services.pipelines.common import RAW_DATA_DIR, PipelineError, backfill_days, cached_get, day_cli
+from services.pipelines.common import PipelineError, backfill_days, day_cli
 
-RAW_DIR = RAW_DATA_DIR / "nse_indices"
 REQUIRED_INDEX = "Nifty 50"  # a file without it is broken; M1 relative strength depends on it
 MIN_ROWS = 40  # 2016 files carry ~70 indices, 2026 ~170
 NUMERIC = {"open": "Open Index Value", "high": "High Index Value", "low": "Low Index Value", "close": "Closing Index Value",
@@ -28,17 +26,11 @@ COLS = "index_name, open, high, low, close, volume, turnover_cr, pe, pb, div_yie
 
 @dataclass
 class Parsed:
+    """Normalised index closes for one day, the shape every source adapter returns: rows are
+    (index_name, open | None, high | None, low | None, close, volume, turnover_cr, pe, pb, div_yield), validated."""
     day: date
     rows: list[tuple] = field(default_factory=list)  # COLS order
     skipped: Counter = field(default_factory=Counter)
-
-
-def url_for(day: date) -> str:
-    return f"https://nsearchives.nseindia.com/content/indices/ind_close_all_{day:%d%m%Y}.csv"
-
-
-def fetch(day: date) -> bytes | None:
-    return cached_get(url_for(day), RAW_DIR)
 
 
 def _parse_row(r: dict) -> tuple | str:
@@ -89,21 +81,21 @@ def parse(data: bytes, day: date) -> Parsed:
     return out
 
 
-def load(conn: psycopg.Connection, parsed: Parsed, min_rows: int | None = None) -> dict:
+def load(conn: psycopg.Connection, parsed: Parsed, source: str = "dev_local", min_rows: int | None = None) -> dict:
     min_rows = MIN_ROWS if min_rows is None else min_rows
     if len(parsed.rows) < min_rows:
         raise PipelineError(f"{parsed.day}: only {len(parsed.rows)} valid indices (< {min_rows}); refusing to load a partial file")
     if REQUIRED_INDEX not in {r[0] for r in parsed.rows}:
         raise PipelineError(f"{parsed.day}: {REQUIRED_INDEX} missing from file")
 
-    value_cols = [c.strip() for c in COLS.split(",")][1:]
+    value_cols = [c.strip() for c in COLS.split(",")][1:] + ["source"]
     with conn.transaction(), conn.cursor() as cur:
         cur.execute("CREATE TEMP TABLE _idx (LIKE index_prices)")
-        with cur.copy(f"COPY _idx ({COLS}, trade_date) FROM STDIN") as cp:
+        with cur.copy(f"COPY _idx ({COLS}, trade_date, source) FROM STDIN") as cp:
             for r in parsed.rows:
-                cp.write_row((*r, parsed.day))
+                cp.write_row((*r, parsed.day, source))
         cur.execute(
-            f"""INSERT INTO index_prices ({COLS}, trade_date) SELECT {COLS}, trade_date FROM _idx
+            f"""INSERT INTO index_prices ({COLS}, trade_date, source) SELECT {COLS}, trade_date, source FROM _idx
                 ON CONFLICT (index_name, trade_date) DO UPDATE SET {", ".join(f"{c} = EXCLUDED.{c}" for c in value_cols)}
                 WHERE ({", ".join(f"index_prices.{c}" for c in value_cols)})
                       IS DISTINCT FROM ({", ".join(f"EXCLUDED.{c}" for c in value_cols)})
@@ -114,18 +106,19 @@ def load(conn: psycopg.Connection, parsed: Parsed, min_rows: int | None = None) 
     return {"indices_inserted": written[True], "indices_updated": written[False], "skipped": dict(parsed.skipped)}
 
 
-def run_day(conn: psycopg.Connection, day: date, fetcher: Callable[[date], bytes | None] = fetch) -> dict:
+def run_day(conn: psycopg.Connection, day: date, adapter) -> dict:
+    """Load one trading day from a source adapter (see services/pipelines/sources.py)."""
     if day.weekday() >= 5:
         return {"day": day, "status": "weekend"}
-    data = fetcher(day)
-    if data is None:
+    parsed = adapter.index_closes(day)
+    if parsed is None:
         return {"day": day, "status": "no_file"}  # holiday, or not published yet
-    return {"day": day, "status": "loaded", **load(conn, parse(data, day))}
+    return {"day": day, "status": "loaded", **load(conn, parsed, source=adapter.name)}
 
 
-def backfill(conn: psycopg.Connection, start: date, end: date, fetcher: Callable[[date], bytes | None] = fetch) -> list[dict]:
-    return backfill_days(start, end, lambda d: run_day(conn, d, fetcher))
+def backfill(conn: psycopg.Connection, start: date, end: date, adapter) -> list[dict]:
+    return backfill_days(start, end, lambda d: run_day(conn, d, adapter))
 
 
 if __name__ == "__main__":
-    day_cli(__doc__, run_day, fetch)
+    day_cli(__doc__, run_day)

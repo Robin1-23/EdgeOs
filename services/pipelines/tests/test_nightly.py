@@ -7,6 +7,7 @@ import pytest
 from db import DATABASE_URL
 from services.pipelines import amfi_nav, nightly, nse_bhavcopy, nse_indices
 from services.pipelines.common import PipelineError
+from services.pipelines.tests.fakes import FakeAdapter
 
 FIX = Path(__file__).parent / "fixtures"
 AMFI = (FIX / "amfi/NAVAll_sample.txt").read_text(encoding="utf-8")
@@ -17,20 +18,15 @@ TODAY = date(2026, 10, 27)  # Tuesday; window 21..27 has weekdays 21, 22, 23, 26
 
 @pytest.fixture
 def fakes(monkeypatch):
-    calls = []  # (pipeline, day) for every NSE download attempt
-
-    def fake_fetch(name, data):
-        def fetch(day):
-            calls.append((name, day))
-            return data if day == TODAY else None
-        return fetch
-
-    monkeypatch.setattr(amfi_nav, "fetch", lambda: AMFI)
+    """Adapter with data only for TODAY; earlier weekdays look like holidays / late files."""
     monkeypatch.setattr(amfi_nav, "MIN_SCHEMES", 0)
-    for name, mod, data in (("nse_bhavcopy", nse_bhavcopy, UDIFF), ("nse_indices", nse_indices, INDICES)):
-        monkeypatch.setattr(mod, "fetch", fake_fetch(name, data))
+    for mod in (nse_bhavcopy, nse_indices):
         monkeypatch.setattr(mod, "MIN_ROWS", 0)
-    return calls
+    return FakeAdapter(prices={TODAY: UDIFF}, indices={TODAY: INDICES}, navs_latest=AMFI)
+
+
+def nse_calls(adapter):
+    return [c for c in adapter.calls if c[0] != "fund_navs_latest"]
 
 
 def runs(conn):
@@ -41,7 +37,7 @@ def runs(conn):
 
 
 def test_normal_night_runs_and_logs_both(db_conn, fakes):
-    results = nightly.nightly(db_conn, TODAY)
+    results = nightly.nightly(db_conn, TODAY, fakes)
     assert [(r["pipeline"], r["target_date"].day, r["status"]) for r in results] == [
         ("amfi_nav", 27, "loaded"),
         *[("nse_bhavcopy", d, "no_file") for d in (21, 22, 23, 26)],
@@ -57,30 +53,30 @@ def test_normal_night_runs_and_logs_both(db_conn, fakes):
 
 
 def test_next_night_only_retries_days_not_loaded(db_conn, fakes):
-    nightly.nightly(db_conn, TODAY)
-    fakes.clear()
-    nightly.nightly(db_conn, TODAY)
+    nightly.nightly(db_conn, TODAY, fakes)
+    fakes.calls.clear()
+    nightly.nightly(db_conn, TODAY, fakes)
     retried = [date(2026, 10, d) for d in (21, 22, 23, 26)]  # 27 already loaded; weekends never fetched
-    assert fakes == [("nse_bhavcopy", d) for d in retried] + [("nse_indices", d) for d in retried]
+    assert nse_calls(fakes) == [("eod_prices", d) for d in retried] + [("index_closes", d) for d in retried]
 
 
 def test_failure_in_one_pipeline_does_not_stop_the_other(db_conn, fakes, monkeypatch):
     def broken():
-        raise PipelineError("https://www.amfiindia.com/spages/NAVAll.txt returned 404")
+        raise PipelineError("AMFI file unreadable")
 
-    monkeypatch.setattr(amfi_nav, "fetch", broken)
-    results = nightly.nightly(db_conn, TODAY)
+    fakes.navs_latest = broken
+    results = nightly.nightly(db_conn, TODAY, fakes)
     assert results[0]["status"] == "failed" and results[-1]["status"] == "loaded"
     assert nightly.exit_code(results) == 1
-    assert runs(db_conn)[0][2:5] == ("failed", None, "PipelineError: https://www.amfiindia.com/spages/NAVAll.txt returned 404")
+    assert runs(db_conn)[0][2:5] == ("failed", None, "PipelineError: AMFI file unreadable")
 
 
 def test_lock_blocks_concurrent_run(db_conn, fakes):
     with psycopg.connect(DATABASE_URL, autocommit=True) as other:
         other.execute("SELECT pg_advisory_lock(%s)", (nightly.LOCK_KEY,))
-        results = nightly.nightly(db_conn, TODAY)
+        results = nightly.nightly(db_conn, TODAY, fakes)
     assert results is None and nightly.exit_code(results) == 2
-    assert runs(db_conn) == [] and fakes == []
+    assert runs(db_conn) == [] and fakes.calls == []
 
 
 def test_today_is_ist():

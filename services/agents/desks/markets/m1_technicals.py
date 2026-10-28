@@ -14,7 +14,7 @@ import psycopg
 from pydantic import BaseModel, ConfigDict, Field
 
 from db import DATABASE_URL
-from services.agents.runlog import run_logged
+from services.agents.runlog import Providers, run_logged
 from services.agents.envelope import Confidence, Envelope, Flag, Gap, Metric, Source
 
 AGENT_ID = "M1"
@@ -272,30 +272,38 @@ def compute(isin: str, symbol: str | None, bars: list[Bar], nifty: dict[date, fl
 
 # --- run ------------------------------------------------------------------------------------------------
 
-def load_inputs(conn: psycopg.Connection, subject: str, as_of: date) -> tuple[str, str | None, list[Bar], dict[date, float]]:
+def load_inputs(conn: psycopg.Connection, subject: str, as_of: date) -> tuple[str, str | None, list[Bar], dict[date, float], Providers]:
+    """(isin, symbol, bars, nifty closes, providers per envelope source id)."""
     row = conn.execute("SELECT id, isin, nse_symbol FROM securities WHERE nse_symbol = %s OR isin = %s", (subject, subject)).fetchone()
     if row is None:
         raise LookupError(f"unknown security {subject!r}")
     sid, isin, symbol = row
     rows = conn.execute(
-        """SELECT trade_date, open, high, low, close FROM prices_daily
+        """SELECT trade_date, open, high, low, close, source FROM prices_daily
            WHERE security_id = %s AND exchange = 'NSE' AND trade_date <= %s ORDER BY trade_date DESC LIMIT %s""",
         (sid, as_of, HISTORY_SESSIONS),
     ).fetchall()
-    bars = [Bar(d, float(o), float(h), float(lo), float(c)) for d, o, h, lo, c in reversed(rows)]
-    nifty = {}
+    bars = [Bar(d, float(o), float(h), float(lo), float(c)) for d, o, h, lo, c, _ in reversed(rows)]
+    price_sources = {r[5] for r in rows}
+    nifty, nifty_sources = {}, set()
     if bars:
-        nifty = {d: float(c) for d, c in conn.execute(
-            "SELECT trade_date, close FROM index_prices WHERE index_name = 'Nifty 50' AND trade_date BETWEEN %s AND %s",
+        for d, c, src in conn.execute(
+            "SELECT trade_date, close, source FROM index_prices WHERE index_name = 'Nifty 50' AND trade_date BETWEEN %s AND %s",
             (bars[0].day, as_of),
-        )}
-    return isin, symbol, bars, nifty
+        ):
+            nifty[d] = float(c)
+            nifty_sources.add(src)
+    providers = {"prices": sorted(price_sources), "prices_vs_nifty": sorted(price_sources | nifty_sources)}
+    return isin, symbol, bars, nifty, providers
 
 
 def run(conn: psycopg.Connection, inp: M1Input) -> Envelope:
     """Compute and log to agent_runs/agent_outputs; failures are logged and re-raised."""
-    return run_logged(conn, AGENT_ID, inp.subject, datetime.combine(inp.as_of, MARKET_CLOSE, IST),
-                      lambda: compute(*load_inputs(conn, inp.subject, inp.as_of), inp.as_of, datetime.now(IST)))
+    def go():
+        *inputs, providers = load_inputs(conn, inp.subject, inp.as_of)
+        return compute(*inputs, inp.as_of, datetime.now(IST)), providers
+
+    return run_logged(conn, AGENT_ID, inp.subject, datetime.combine(inp.as_of, MARKET_CLOSE, IST), go)
 
 
 if __name__ == "__main__":

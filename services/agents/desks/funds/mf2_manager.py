@@ -17,7 +17,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from db import DATABASE_URL
 from services.agents.desks.funds.categories import BENCHMARK, is_growth, sebi_category
-from services.agents.runlog import run_logged
+from services.agents.runlog import Providers, run_logged
 from services.agents.envelope import Confidence, Envelope, Flag, Gap, Metric, Source
 
 AGENT_ID = "MF2"
@@ -215,41 +215,53 @@ def compute(scheme: dict, fund: Series, peers: dict[str, Series], bench: Series,
 
 # --- run ------------------------------------------------------------------------------------------------
 
-def _series(rows) -> Series:
-    return [(d, float(v)) for d, v in rows]
+def _series(rows, sources: set[str]) -> Series:
+    """(date, value, source) rows -> Series; collects each row's source into `sources`."""
+    out = []
+    for d, v, src in rows:
+        out.append((d, float(v)))
+        sources.add(src)
+    return out
 
 
-def load_inputs(conn: psycopg.Connection, code: str, as_of: date) -> tuple[dict, Series, dict[str, Series], Series]:
+def load_inputs(conn: psycopg.Connection, code: str, as_of: date) -> tuple[dict, Series, dict[str, Series], Series, Providers]:
+    """(scheme, fund NAVs, peer NAVs by code, benchmark closes, providers per envelope source id)."""
     row = conn.execute("SELECT amfi_code, name, category, plan, option FROM fund_schemes WHERE amfi_code = %s", (code,)).fetchone()
     if row is None:
         raise LookupError(f"unknown scheme {code!r}")
     scheme = dict(zip(("amfi_code", "name", "category", "plan", "option"), row))
     since = as_of - timedelta(days=366 * HISTORY_YEARS)
-    fund = _series(conn.execute("SELECT nav_date, nav FROM fund_nav WHERE amfi_code = %s AND nav_date BETWEEN %s AND %s ORDER BY 1",
-                                (code, since, as_of)))
+    fund_src, peer_src, bench_src = set(), set(), set()
+    fund = _series(conn.execute("SELECT nav_date, nav, source FROM fund_nav WHERE amfi_code = %s AND nav_date BETWEEN %s AND %s"
+                                " ORDER BY 1", (code, since, as_of)), fund_src)
     category = sebi_category(scheme["category"])
     peers: dict[str, Series] = {}
     if category and scheme["plan"]:
         candidates = [c for c, cat, opt in conn.execute(
             "SELECT amfi_code, category, option FROM fund_schemes WHERE scheme_type = 'open' AND plan = %s", (scheme["plan"],)
         ) if sebi_category(cat) == category and is_growth(opt)]
-        for c, d, v in conn.execute(
-            "SELECT amfi_code, nav_date, nav FROM fund_nav WHERE amfi_code = ANY(%s) AND nav_date BETWEEN %s AND %s ORDER BY 1, 2",
-            (candidates, since, as_of),
+        for c, d, v, src in conn.execute(
+            "SELECT amfi_code, nav_date, nav, source FROM fund_nav WHERE amfi_code = ANY(%s) AND nav_date BETWEEN %s AND %s"
+            " ORDER BY 1, 2", (candidates, since, as_of),
         ):
             peers.setdefault(c, []).append((d, float(v)))
+            peer_src.add(src)
     bench: Series = []
     if (name := BENCHMARK.get(category)) is not None:
         bench = _series(conn.execute(
-            "SELECT trade_date, close FROM index_prices WHERE index_name = %s AND trade_date BETWEEN %s AND %s ORDER BY 1",
-            (name, since, as_of)))
-    return scheme, fund, peers, bench
+            "SELECT trade_date, close, source FROM index_prices WHERE index_name = %s AND trade_date BETWEEN %s AND %s ORDER BY 1",
+            (name, since, as_of)), bench_src)
+    providers = {"nav": sorted(fund_src), "peers": sorted(peer_src | fund_src), "benchmark": sorted(bench_src)}
+    return scheme, fund, peers, bench, providers
 
 
 def run(conn: psycopg.Connection, inp: MF2Input) -> Envelope:
     """Compute and log to agent_runs/agent_outputs; failures are logged and re-raised."""
-    return run_logged(conn, AGENT_ID, inp.amfi_code, datetime.combine(inp.as_of, NAV_TIME, IST),
-                      lambda: compute(*load_inputs(conn, inp.amfi_code, inp.as_of), inp.as_of, datetime.now(IST)))
+    def go():
+        *inputs, providers = load_inputs(conn, inp.amfi_code, inp.as_of)
+        return compute(*inputs, inp.as_of, datetime.now(IST)), providers
+
+    return run_logged(conn, AGENT_ID, inp.amfi_code, datetime.combine(inp.as_of, NAV_TIME, IST), go)
 
 
 if __name__ == "__main__":

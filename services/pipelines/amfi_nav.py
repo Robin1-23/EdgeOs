@@ -1,6 +1,7 @@
-"""AMFI daily NAV pipeline: NAVAll.txt -> fund_schemes + fund_nav. Idempotent.
+"""AMFI-format NAV parser + loader (daily NAVAll.txt or the NAV history report) -> fund_schemes + fund_nav. Idempotent.
 
-Usage: uv run python -m services.pipelines.amfi_nav [--file PATH]
+Rows come from a source adapter (services/pipelines/sources.py); this module never downloads.
+Usage: uv run python -m services.pipelines.amfi_nav [--date YYYY-MM-DD] [--source dev_local]
 """
 
 import argparse
@@ -9,14 +10,12 @@ from collections import Counter
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
-from pathlib import Path
 
 import psycopg
 
 from db import DATABASE_URL
-from services.pipelines.common import PipelineError, http_get
+from services.pipelines.common import PipelineError
 
-URL = "https://www.amfiindia.com/spages/NAVAll.txt"
 HEADER = "Scheme Code;ISIN Div Payout/ ISIN Growth;ISIN Div Reinvestment;Scheme Name;Plan;Option;Net Asset Value;Date"
 HISTORY_HEADER = "Scheme Code;NAV Name;Plan;Option;ISIN Div Payout/ISIN Growth;ISIN Div Reinvestment;Net Asset Value;Date"
 # Column positions of (code, isin_growth, isin_reinvest, name, plan, option, nav, date) per format.
@@ -31,19 +30,11 @@ SCHEME_COLS = "amfi_code, name, amc, category, scheme_type, plan, option, isin_g
 
 @dataclass
 class Parsed:
+    """Normalised NAV data, the shape every source adapter returns. schemes: SCHEME_COLS tuples (plan 'direct' |
+    'regular' | None, category as published); navs: (amfi_code, nav_date, nav > 0), validated, one per code and date."""
     schemes: list[tuple] = field(default_factory=list)  # SCHEME_COLS order
     navs: list[tuple] = field(default_factory=list)  # (amfi_code, nav_date, nav)
     skipped: Counter = field(default_factory=Counter)  # reason -> rows
-
-
-def fetch(url: str = URL) -> str:
-    body = http_get(url)
-    if body is None:
-        raise PipelineError(f"{url} returned 404")
-    try:
-        return body.decode("utf-8")
-    except UnicodeDecodeError as e:
-        raise PipelineError(f"file is not UTF-8: {e}") from e
 
 
 def _parse_row(line: str, today: date, cols: tuple[int, ...]) -> tuple | str:
@@ -114,7 +105,8 @@ def parse(text: str, today: date | None = None) -> Parsed:
     return out
 
 
-def load(conn: psycopg.Connection, parsed: Parsed, min_schemes: int | None = None, update_schemes: bool = True) -> dict:
+def load(conn: psycopg.Connection, parsed: Parsed, min_schemes: int | None = None, update_schemes: bool = True,
+         source: str = "dev_local") -> dict:
     """Upsert in one transaction; rows are written only when a value actually changed.
     update_schemes=False (history backfill) only inserts missing schemes: old reports carry old names and
     categories that must not overwrite the current master."""
@@ -122,7 +114,7 @@ def load(conn: psycopg.Connection, parsed: Parsed, min_schemes: int | None = Non
     if len(parsed.schemes) < min_schemes:
         raise PipelineError(f"only {len(parsed.schemes)} valid schemes (< {min_schemes}); refusing to load a partial file")
 
-    set_cols = [c.strip() for c in SCHEME_COLS.split(",")][1:]
+    set_cols = [c.strip() for c in SCHEME_COLS.split(",")][1:] + ["source"]
     on_conflict = (
         f"""DO UPDATE SET {", ".join(f"{c} = EXCLUDED.{c}" for c in set_cols)}
             WHERE ({", ".join(f"fund_schemes.{c}" for c in set_cols)})
@@ -131,23 +123,23 @@ def load(conn: psycopg.Connection, parsed: Parsed, min_schemes: int | None = Non
     )
     with conn.transaction(), conn.cursor() as cur:
         cur.execute("CREATE TEMP TABLE _schemes (LIKE fund_schemes); CREATE TEMP TABLE _navs (LIKE fund_nav)")
-        with cur.copy(f"COPY _schemes ({SCHEME_COLS}) FROM STDIN") as cp:
+        with cur.copy(f"COPY _schemes ({SCHEME_COLS}, source) FROM STDIN") as cp:
             for r in parsed.schemes:
-                cp.write_row(r)
-        with cur.copy("COPY _navs (amfi_code, nav_date, nav) FROM STDIN") as cp:
+                cp.write_row((*r, source))
+        with cur.copy("COPY _navs (amfi_code, nav_date, nav, source) FROM STDIN") as cp:
             for r in parsed.navs:
-                cp.write_row(r)
+                cp.write_row((*r, source))
 
         cur.execute(
-            f"""INSERT INTO fund_schemes ({SCHEME_COLS}) SELECT {SCHEME_COLS} FROM _schemes
+            f"""INSERT INTO fund_schemes ({SCHEME_COLS}, source) SELECT {SCHEME_COLS}, source FROM _schemes
                 ON CONFLICT (amfi_code) {on_conflict}
                 RETURNING xmax = 0"""
         )
         schemes = Counter(inserted for (inserted,) in cur.fetchall())
         cur.execute(
-            """INSERT INTO fund_nav (amfi_code, nav_date, nav) SELECT amfi_code, nav_date, nav FROM _navs
-               ON CONFLICT (amfi_code, nav_date) DO UPDATE SET nav = EXCLUDED.nav
-               WHERE fund_nav.nav IS DISTINCT FROM EXCLUDED.nav
+            """INSERT INTO fund_nav (amfi_code, nav_date, nav, source) SELECT amfi_code, nav_date, nav, source FROM _navs
+               ON CONFLICT (amfi_code, nav_date) DO UPDATE SET nav = EXCLUDED.nav, source = EXCLUDED.source
+               WHERE (fund_nav.nav, fund_nav.source) IS DISTINCT FROM (EXCLUDED.nav, EXCLUDED.source)
                RETURNING xmax = 0"""
         )
         navs = Counter(inserted for (inserted,) in cur.fetchall())
@@ -162,14 +154,21 @@ def load(conn: psycopg.Connection, parsed: Parsed, min_schemes: int | None = Non
     }
 
 
-def run(conn: psycopg.Connection, file: Path | None = None, today: date | None = None) -> dict:
-    text = file.read_text(encoding="utf-8") if file else fetch()
-    return load(conn, parse(text, today))
+def run(conn: psycopg.Connection, adapter, today: date | None = None) -> dict:
+    """Load the latest NAVs from a source adapter (see services/pipelines/sources.py)."""
+    today = today or date.today()
+    parsed = adapter.fund_navs_latest(today)
+    if parsed is None:
+        return {"status": "no_file"}
+    return {"status": "loaded", **load(conn, parsed, source=adapter.name)}
 
 
 if __name__ == "__main__":
-    ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--file", type=Path, help="load a saved NAVAll.txt instead of downloading")
+    from services.pipelines.sources import ADAPTERS, get_adapter
+
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--date", type=date.fromisoformat, default=date.today())
+    ap.add_argument("--source", choices=sorted(ADAPTERS))
     args = ap.parse_args()
     with psycopg.connect(DATABASE_URL) as conn:
-        print(run(conn, args.file))
+        print(run(conn, get_adapter(args.source), args.date))

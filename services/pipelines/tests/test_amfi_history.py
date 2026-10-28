@@ -2,7 +2,11 @@ from datetime import date
 from decimal import Decimal
 from pathlib import Path
 
+import pytest
+
 from services.pipelines import amfi_history, amfi_nav
+from services.pipelines.common import PipelineError
+from services.pipelines.tests.fakes import FakeAdapter
 
 FIX = Path(__file__).parent / "fixtures/amfi"
 HISTORY = (FIX / "NAVHistory_sample.txt").read_text(encoding="utf-8")
@@ -25,16 +29,20 @@ def test_history_never_overwrites_current_scheme_master(db_conn, monkeypatch):
     amfi_nav.load(db_conn, amfi_nav.parse(DAILY, TODAY), min_schemes=0)
     name_before = db_conn.execute("SELECT name FROM fund_schemes WHERE amfi_code = '119528'").fetchone()[0]
 
-    result = amfi_history.run_month(db_conn, 2026, 10, TODAY, fetcher=lambda *_: HISTORY)
+    adapter = FakeAdapter(months={(2026, 10): HISTORY})
+    result = amfi_history.run_month(db_conn, 2026, 10, TODAY, adapter)
     assert (result["schemes_inserted"], result["schemes_updated"]) == (1, 0)  # only 148921 is new
     assert result["navs_inserted"] == 9  # 119528's 27-Oct NAV was already there from the daily file
     assert db_conn.execute("SELECT name FROM fund_schemes WHERE amfi_code = '119528'").fetchone()[0] == name_before
 
-    again = amfi_history.run_month(db_conn, 2026, 10, TODAY, fetcher=lambda *_: HISTORY)
+    again = amfi_history.run_month(db_conn, 2026, 10, TODAY, adapter)
     assert (again["navs_inserted"], again["navs_updated"]) == (0, 0)
 
 
 def test_months_and_ranges():
     assert amfi_history.months("2025-11", "2026-02") == [(2025, 11), (2025, 12), (2026, 1), (2026, 2)]
-    assert amfi_history.month_range(2024, 2) == (date(2024, 2, 1), date(2024, 2, 29))
-    assert "frmdt=01-Feb-2024&todt=29-Feb-2024" in amfi_history.URL.format(start=amfi_history.amfi_date(date(2024, 2, 1)), end=amfi_history.amfi_date(date(2024, 2, 29)))
+
+
+def test_missing_month_is_an_error(db_conn):
+    with pytest.raises(PipelineError, match="no NAV history for 2020-01"):
+        amfi_history.run_month(db_conn, 2020, 1, TODAY, FakeAdapter())

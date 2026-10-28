@@ -6,6 +6,7 @@ import pytest
 
 from services.pipelines import nse_bhavcopy as nse
 from services.pipelines.common import PipelineError
+from services.pipelines.tests.fakes import FakeAdapter
 
 FIX = Path(__file__).parent / "fixtures/nse"
 UDIFF = (FIX / "BhavCopy_NSE_CM_0_0_0_20261027_F_0000.csv.zip").read_bytes()
@@ -16,12 +17,6 @@ NIFTYBEES_2016, NIFTYBEES_2026 = "INF732E01011", "INF204KB14I2"  # ETF changed A
 
 def by_symbol(parsed):
     return {r[1]: r for r in parsed.rows}
-
-
-def test_url_for_both_formats():
-    assert nse.url_for(D2026).endswith("/content/cm/BhavCopy_NSE_CM_0_0_0_20261027_F_0000.csv.zip")
-    assert nse.url_for(D2016).endswith("/content/historical/EQUITIES/2016/OCT/cm27OCT2016bhav.csv.zip")
-    assert "historical" in nse.url_for(date(2024, 7, 5)) and "historical" not in nse.url_for(date(2024, 7, 8))
 
 
 def test_parse_udiff_known_values():
@@ -105,16 +100,11 @@ def test_load_refuses_partial_file(db_conn):
 
 def test_backfill_weekends_holidays_and_failures(db_conn, monkeypatch):
     monkeypatch.setattr(nse, "MIN_ROWS", 0)
-    calls = []
-    files = {date(2026, 10, 23): b"<html>bad</html>", date(2026, 10, 26): None, D2026: UDIFF}
+    adapter = FakeAdapter(prices={date(2026, 10, 23): b"<html>bad</html>", D2026: UDIFF})  # 26th: no data (holiday)
 
-    def fake_fetch(day):
-        calls.append(day)
-        return files[day]
-
-    results = nse.backfill(db_conn, date(2026, 10, 23), D2026, fake_fetch)  # Fri .. Tue
+    results = nse.backfill(db_conn, date(2026, 10, 23), D2026, adapter)  # Fri .. Tue
     assert [(r["day"].day, r["status"]) for r in results] == [
         (23, "failed"), (24, "weekend"), (25, "weekend"), (26, "no_file"), (27, "loaded"),
     ]
-    assert calls == [date(2026, 10, 23), date(2026, 10, 26), D2026]
+    assert adapter.calls == [("eod_prices", d) for d in (date(2026, 10, 23), date(2026, 10, 26), D2026)]
     assert count(db_conn, "prices_daily") == 8

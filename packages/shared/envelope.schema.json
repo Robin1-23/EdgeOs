@@ -192,6 +192,14 @@
           "format": "date-time",
           "title": "Retrieved At",
           "type": "string"
+        },
+        "providers": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Providers",
+          "type": "array"
         }
       },
       "required": [

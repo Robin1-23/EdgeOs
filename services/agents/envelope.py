@@ -17,6 +17,7 @@ class Source(_Model):
     kind: Literal["dataset", "filing", "api"]
     ref: str = NonEmpty  # dataset name, filing URL or API call
     retrieved_at: AwareDatetime
+    providers: list[str] = []  # data_sources names behind the rows read; empty = unknown, never public
 
 
 class Metric(_Model):

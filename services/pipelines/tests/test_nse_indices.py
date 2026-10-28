@@ -6,6 +6,7 @@ import pytest
 
 from services.pipelines import nse_indices as idx
 from services.pipelines.common import PipelineError
+from services.pipelines.tests.fakes import FakeAdapter
 
 FIX = Path(__file__).parent / "fixtures/nse_indices"
 F2026 = (FIX / "ind_close_all_27102026.csv").read_bytes()
@@ -15,10 +16,6 @@ D2026, D2016 = date(2026, 10, 27), date(2016, 10, 27)
 
 def by_name(parsed):
     return {r[0]: r for r in parsed.rows}
-
-
-def test_url():
-    assert idx.url_for(D2026).endswith("/content/indices/ind_close_all_27102026.csv")
 
 
 def test_parse_known_values():
@@ -55,5 +52,7 @@ def test_load_idempotent_and_requires_nifty(db_conn):
 
 
 def test_run_day_weekend_and_holiday(db_conn):
-    assert idx.run_day(db_conn, date(2026, 10, 25), lambda d: pytest.fail("fetched a weekend"))["status"] == "weekend"
-    assert idx.run_day(db_conn, date(2026, 10, 20), lambda d: None)["status"] == "no_file"
+    adapter = FakeAdapter()
+    assert idx.run_day(db_conn, date(2026, 10, 25), adapter)["status"] == "weekend"
+    assert idx.run_day(db_conn, date(2026, 10, 20), adapter)["status"] == "no_file"
+    assert adapter.calls == [("index_closes", date(2026, 10, 20))]  # weekends never asked for
