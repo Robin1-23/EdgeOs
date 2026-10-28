@@ -5,28 +5,32 @@ import psycopg
 import pytest
 
 from db import DATABASE_URL
-from services.pipelines import amfi_nav, nightly, nse_bhavcopy
+from services.pipelines import amfi_nav, nightly, nse_bhavcopy, nse_indices
 from services.pipelines.common import PipelineError
 
 FIX = Path(__file__).parent / "fixtures"
 AMFI = (FIX / "amfi/NAVAll_sample.txt").read_text(encoding="utf-8")
 UDIFF = (FIX / "nse/BhavCopy_NSE_CM_0_0_0_20261027_F_0000.csv.zip").read_bytes()
+INDICES = (FIX / "nse_indices/ind_close_all_27102026.csv").read_bytes()
 TODAY = date(2026, 10, 27)  # Tuesday; window 21..27 has weekdays 21, 22, 23, 26, 27
 
 
 @pytest.fixture
 def fakes(monkeypatch):
-    nse_calls = []
+    calls = []  # (pipeline, day) for every NSE download attempt
 
-    def nse_fetch(day):
-        nse_calls.append(day)
-        return UDIFF if day == TODAY else None
+    def fake_fetch(name, data):
+        def fetch(day):
+            calls.append((name, day))
+            return data if day == TODAY else None
+        return fetch
 
     monkeypatch.setattr(amfi_nav, "fetch", lambda: AMFI)
     monkeypatch.setattr(amfi_nav, "MIN_SCHEMES", 0)
-    monkeypatch.setattr(nse_bhavcopy, "fetch", nse_fetch)
-    monkeypatch.setattr(nse_bhavcopy, "MIN_ROWS", 0)
-    return nse_calls
+    for name, mod, data in (("nse_bhavcopy", nse_bhavcopy, UDIFF), ("nse_indices", nse_indices, INDICES)):
+        monkeypatch.setattr(mod, "fetch", fake_fetch(name, data))
+        monkeypatch.setattr(mod, "MIN_ROWS", 0)
+    return calls
 
 
 def runs(conn):
@@ -42,18 +46,22 @@ def test_normal_night_runs_and_logs_both(db_conn, fakes):
         ("amfi_nav", 27, "loaded"),
         *[("nse_bhavcopy", d, "no_file") for d in (21, 22, 23, 26)],
         ("nse_bhavcopy", 27, "loaded"),
+        *[("nse_indices", d, "no_file") for d in (21, 22, 23, 26)],
+        ("nse_indices", 27, "loaded"),
     ]
     assert nightly.exit_code(results) == 0
     logged = runs(db_conn)
-    assert len(logged) == 6 and all(r[5] and r[6] for r in logged)
-    assert logged[0][3]["navs_inserted"] == 11 and logged[-1][3]["prices_inserted"] == 8
+    assert len(logged) == 11 and all(r[5] and r[6] for r in logged)
+    assert logged[0][3]["navs_inserted"] == 11 and logged[5][3]["prices_inserted"] == 8
+    assert logged[-1][3]["indices_inserted"] == 6
 
 
 def test_next_night_only_retries_days_not_loaded(db_conn, fakes):
     nightly.nightly(db_conn, TODAY)
     fakes.clear()
     nightly.nightly(db_conn, TODAY)
-    assert fakes == [date(2026, 10, d) for d in (21, 22, 23, 26)]  # 27 already loaded; weekends never fetched
+    retried = [date(2026, 10, d) for d in (21, 22, 23, 26)]  # 27 already loaded; weekends never fetched
+    assert fakes == [("nse_bhavcopy", d) for d in retried] + [("nse_indices", d) for d in retried]
 
 
 def test_failure_in_one_pipeline_does_not_stop_the_other(db_conn, fakes, monkeypatch):

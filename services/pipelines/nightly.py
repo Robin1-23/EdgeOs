@@ -1,4 +1,4 @@
-"""Nightly data run: AMFI NAV, then NSE bhavcopy catch-up for the last 7 days. Every run is logged to pipeline_runs.
+"""Nightly data run: AMFI NAV, then NSE bhavcopy and index catch-up for the last 7 days. Every run is logged to pipeline_runs.
 
 Usage: uv run python -m services.pipelines.nightly [--date YYYY-MM-DD]   # --date = "today" in IST
 
@@ -18,7 +18,7 @@ import psycopg
 from psycopg.types.json import Jsonb
 
 from db import DATABASE_URL
-from services.pipelines import amfi_nav, nse_bhavcopy
+from services.pipelines import amfi_nav, nse_bhavcopy, nse_indices
 
 IST = ZoneInfo("Asia/Kolkata")
 CATCHUP_DAYS = 7
@@ -29,13 +29,13 @@ def today_ist(now: datetime | None = None) -> date:
     return (now or datetime.now(IST)).astimezone(IST).date()
 
 
-def nse_days_to_load(conn: psycopg.Connection, today: date) -> list[date]:
+def days_to_load(conn: psycopg.Connection, pipeline: str, today: date) -> list[date]:
     """Weekdays in the window with no successful load yet (late files, missed nights, holidays retried)."""
     window = [today - timedelta(days=n) for n in range(CATCHUP_DAYS - 1, -1, -1)]
     loaded = {
         d for (d,) in conn.execute(
-            "SELECT target_date FROM pipeline_runs WHERE pipeline = 'nse_bhavcopy' AND status = 'loaded' AND target_date >= %s",
-            (window[0],),
+            "SELECT target_date FROM pipeline_runs WHERE pipeline = %s AND status = 'loaded' AND target_date >= %s",
+            (pipeline, window[0]),
         )
     }
     return [d for d in window if d.weekday() < 5 and d not in loaded]
@@ -67,8 +67,9 @@ def nightly(conn: psycopg.Connection, today: date) -> list[dict] | None:
         return None
     try:
         results = [_run_logged(conn, "amfi_nav", today, lambda: amfi_nav.run(conn, today=today))]
-        for day in nse_days_to_load(conn, today):
-            results.append(_run_logged(conn, "nse_bhavcopy", day, lambda d=day: nse_bhavcopy.run_day(conn, d, nse_bhavcopy.fetch)))
+        for name, mod in (("nse_bhavcopy", nse_bhavcopy), ("nse_indices", nse_indices)):
+            for day in days_to_load(conn, name, today):
+                results.append(_run_logged(conn, name, day, lambda d=day, m=mod: m.run_day(conn, d, m.fetch)))
         return results
     finally:
         conn.execute("SELECT pg_advisory_unlock(%s)", (LOCK_KEY,))

@@ -6,33 +6,26 @@ Usage:
   uv run python -m services.pipelines.nse_bhavcopy --date 2026-10-27 --file PATH.zip
 """
 
-import argparse
 import csv
 import io
-import os
 import re
-import sys
-import time
 import zipfile
 from collections import Counter
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
-from pathlib import Path
 
 import psycopg
 
-from db import DATABASE_URL
-from services.pipelines.common import PipelineError, http_get
+from services.pipelines.common import RAW_DATA_DIR, PipelineError, backfill_days, cached_get, day_cli
 
 UDIFF_FROM = date(2024, 7, 8)  # first day NSE serves only the UDiFF format
 MONTHS = "JAN FEB MAR APR MAY JUN JUL AUG SEP OCT NOV DEC".split()
 SERIES_PRIORITY = {"EQ": 0, "BE": 1, "BZ": 2, "SM": 3, "ST": 4}  # equity series; others (bonds, G-secs) dropped
 ISIN = re.compile(r"^IN[A-Z0-9]{10}$")
 MIN_ROWS = 1000  # 2016 files have ~1.6k equity rows, 2026 ~3.4k; fewer means a broken file
-RAW_DIR = Path(os.environ.get("RAW_DATA_DIR", "data/raw")) / "nse"
-POLITE_PAUSE = 1.0  # seconds after each real download
+RAW_DIR = RAW_DATA_DIR / "nse"
 
 # (date column, date format, column map); name is absent in the pre-2024 format.
 FORMATS = {
@@ -59,17 +52,8 @@ def url_for(day: date) -> str:
 
 
 def fetch(day: date) -> bytes | None:
-    """Zip bytes for the day, from the local cache when present; None if NSE has no file (holiday)."""
-    url = url_for(day)
-    cached = RAW_DIR / url.rsplit("/", 1)[1]
-    if cached.exists():
-        return cached.read_bytes()
-    data = http_get(url)
-    time.sleep(POLITE_PAUSE)
-    if data is not None:
-        cached.parent.mkdir(parents=True, exist_ok=True)
-        cached.write_bytes(data)
-    return data
+    """Zip bytes for the day; None if NSE has no file (holiday)."""
+    return cached_get(url_for(day), RAW_DIR)
 
 
 def _parse_row(r: dict, cols: dict) -> tuple | str:
@@ -217,33 +201,9 @@ def run_day(conn: psycopg.Connection, day: date, fetcher: Callable[[date], bytes
 
 
 def backfill(conn: psycopg.Connection, start: date, end: date, fetcher: Callable[[date], bytes | None] = fetch) -> list[dict]:
-    """Oldest first so the latest symbol/name wins; a failed day is reported, not fatal."""
-    results = []
-    for n in range((end - start).days + 1):
-        day = start + timedelta(days=n)
-        try:
-            results.append(run_day(conn, day, fetcher))
-        except PipelineError as e:
-            results.append({"day": day, "status": "failed", "error": str(e)})
-    return results
+    """Oldest first so the latest symbol/name wins."""
+    return backfill_days(start, end, lambda d: run_day(conn, d, fetcher))
 
 
 if __name__ == "__main__":
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--date", type=date.fromisoformat, help="single trading day")
-    ap.add_argument("--from", dest="start", type=date.fromisoformat, help="backfill start (inclusive)")
-    ap.add_argument("--to", dest="end", type=date.fromisoformat, help="backfill end (inclusive)")
-    ap.add_argument("--file", type=Path, help="load a saved zip for --date instead of downloading")
-    args = ap.parse_args()
-    if bool(args.start) != bool(args.end) or bool(args.date) == bool(args.start):
-        ap.error("give --date, or both --from and --to")
-
-    with psycopg.connect(DATABASE_URL) as conn:
-        if args.date:
-            fetcher = (lambda _: args.file.read_bytes()) if args.file else fetch
-            results = backfill(conn, args.date, args.date, fetcher)
-        else:
-            results = backfill(conn, args.start, args.end)
-        for r in results:
-            print(r)
-    sys.exit(1 if any(r["status"] == "failed" for r in results) else 0)
+    day_cli(__doc__, run_day, fetch)
