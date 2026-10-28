@@ -1,6 +1,6 @@
 from datetime import date
 
-from services.pipelines import amfi_nav, classification, fundamentals, nse_bhavcopy, nse_indices
+from services.pipelines import amfi_nav, classification, fund_disclosures, fundamentals, nse_bhavcopy, nse_indices
 
 
 class FakeAdapter:
@@ -8,8 +8,10 @@ class FakeAdapter:
     Days not in the dicts return None (holiday / not available); every call is recorded."""
 
     def __init__(self, name="dev_local", prices=None, indices=None, navs_latest=None, months=None, financials=None,
-                 sectors=None):
+                 sectors=None, holdings=None, constituents=None, ters=None):
         self.name = name
+        # (year, month) -> raw records for fund_disclosures.build_*
+        self.holdings, self.constituents, self.ters = holdings or {}, constituents or {}, ters or {}
         self.sectors = sectors  # raw (isin, sector, industry) records for classification.build, or None
         self.financials = financials or {}  # isin -> raw records for fundamentals.build
         self.prices, self.indices, self.months = prices or {}, indices or {}, months or {}
@@ -45,3 +47,15 @@ class FakeAdapter:
     def classification(self):
         self.calls.append(("classification", None))
         return classification.build(self.sectors) if self.sectors is not None else None
+
+    def fund_holdings(self, year: int, month: int):
+        recs = self.holdings.get((year, month))
+        return fund_disclosures.build_holdings(recs) if recs is not None else None
+
+    def index_constituents(self, year: int, month: int):
+        recs = self.constituents.get((year, month))
+        return fund_disclosures.build_constituents(recs) if recs is not None else None
+
+    def expense_ratios(self, year: int, month: int):
+        recs = self.ters.get((year, month))
+        return fund_disclosures.build_expense_ratios(recs) if recs is not None else None

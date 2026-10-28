@@ -12,7 +12,7 @@ from datetime import date
 from pathlib import Path
 from typing import Protocol
 
-from services.pipelines import amfi_nav, classification, fundamentals, nse_bhavcopy, nse_indices
+from services.pipelines import amfi_nav, classification, fund_disclosures, fundamentals, nse_bhavcopy, nse_indices
 from services.pipelines.common import RAW_DATA_DIR, PipelineError
 
 
@@ -37,6 +37,15 @@ class SourceAdapter(Protocol):
 
     def classification(self) -> classification.Parsed | None:
         """Sector and industry for every covered security (classification.build validates); None if unavailable."""
+
+    def fund_holdings(self, year: int, month: int) -> fund_disclosures.Parsed | None:
+        """Every scheme's portfolio disclosed for the month (fund_disclosures.build_holdings), under each plan's code."""
+
+    def index_constituents(self, year: int, month: int) -> fund_disclosures.Parsed | None:
+        """Constituent weights of benchmark indices for the month (fund_disclosures.build_constituents)."""
+
+    def expense_ratios(self, year: int, month: int) -> fund_disclosures.Parsed | None:
+        """Total expense ratios in force during the month (fund_disclosures.build_expense_ratios)."""
 
 
 class DevLocal:
@@ -91,6 +100,15 @@ class DevLocal:
     def classification(self) -> classification.Parsed | None:
         return None  # same: no permitted classification source in dev
 
+    def fund_holdings(self, year: int, month: int) -> fund_disclosures.Parsed | None:
+        return None  # AMC/AMFI portfolio files: terms do not allow reuse (see data_sources)
+
+    def index_constituents(self, year: int, month: int) -> fund_disclosures.Parsed | None:
+        return None
+
+    def expense_ratios(self, year: int, month: int) -> fund_disclosures.Parsed | None:
+        return None
+
 
 class LicensedVendor:
     """Stub for a licensed feed (e.g. Accord/ACE, CMOTS, NSE Data & Analytics). Implement each method by mapping
@@ -123,6 +141,15 @@ class LicensedVendor:
 
     def classification(self) -> classification.Parsed | None:
         self._todo("classification", "classification.build((isin, sector, industry) records)")
+
+    def fund_holdings(self, year: int, month: int) -> fund_disclosures.Parsed | None:
+        self._todo("fund_holdings", "fund_disclosures.build_holdings(records)")
+
+    def index_constituents(self, year: int, month: int) -> fund_disclosures.Parsed | None:
+        self._todo("index_constituents", "fund_disclosures.build_constituents(records)")
+
+    def expense_ratios(self, year: int, month: int) -> fund_disclosures.Parsed | None:
+        self._todo("expense_ratios", "fund_disclosures.build_expense_ratios(records)")
 
 
 ADAPTERS: dict[str, type] = {"dev_local": DevLocal, "licensed_vendor": LicensedVendor}
