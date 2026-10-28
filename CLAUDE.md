@@ -21,8 +21,8 @@ Do NOT build F&O, You desk, or Family desk yet (Phases 2–4). No live market da
 4. **Every claim has a source.** Findings without a linked metric and source are dropped by the verifier.
 5. **Describe, never advise.** No buy/sell/hold, target prices or return promises anywhere in output. The compliance guard runs last on every report; keep its test set passing.
 6. **Missing data → say so.** Agents report gaps; they never guess or fill in values.
-8. **Data only through source adapters.** Pipelines get rows from `services/pipelines/sources.py` (`dev_local` = files already downloaded, dev only; `licensed_vendor` = stub for the licensed feed). No pipeline downloads from exchange or AMFI websites (their terms forbid automated collection and public display). Every row carries `source`; pages may show only `agent_outputs.public_ok` results.
 7. **Batch first.** Markets and MF agents run nightly and write to `reports`; pages read from cache. On-demand runs only for the ask box.
+8. **Data only through source adapters.** Pipelines get rows from `services/pipelines/sources.py` (`dev_local` = files already downloaded, dev only; `licensed_vendor` = stub for the licensed feed). No pipeline downloads from exchange or AMFI websites (their terms forbid automated collection and public display). Every row carries `source`; pages may show only `agent_outputs.public_ok` results.
 
 ## Stack
 
