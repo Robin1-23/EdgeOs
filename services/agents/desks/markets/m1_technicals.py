@@ -4,7 +4,6 @@ Usage: uv run python -m services.agents.desks.markets.m1_technicals RELIANCE [--
 """
 
 import argparse
-import time
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import date, datetime, time as dtime
@@ -12,10 +11,10 @@ from fractions import Fraction
 from zoneinfo import ZoneInfo
 
 import psycopg
-from psycopg.types.json import Jsonb
 from pydantic import BaseModel, ConfigDict, Field
 
 from db import DATABASE_URL
+from services.agents.runlog import run_logged
 from services.agents.envelope import Confidence, Envelope, Flag, Gap, Metric, Source
 
 AGENT_ID = "M1"
@@ -294,23 +293,9 @@ def load_inputs(conn: psycopg.Connection, subject: str, as_of: date) -> tuple[st
 
 
 def run(conn: psycopg.Connection, inp: M1Input) -> Envelope:
-    """Compute and log to agent_runs/agent_outputs. Unknown subjects are logged as failed and re-raised."""
-    started = time.monotonic()
-    as_of_ts = datetime.combine(inp.as_of, MARKET_CLOSE, IST)
-    (run_id,) = conn.execute(
-        "INSERT INTO agent_runs (agent_id, subject, as_of, status) VALUES (%s, %s, %s, 'running') RETURNING id",
-        (AGENT_ID, inp.subject, as_of_ts),
-    ).fetchone()
-    try:
-        env = compute(*load_inputs(conn, inp.subject, inp.as_of), inp.as_of, datetime.now(IST))
-    except Exception as e:
-        conn.execute("UPDATE agent_runs SET status = 'failed', error = %s, duration_ms = %s, cost_usd = 0 WHERE id = %s",
-                     (f"{type(e).__name__}: {e}", int((time.monotonic() - started) * 1000), run_id))
-        raise
-    conn.execute("UPDATE agent_runs SET status = 'ok', duration_ms = %s, cost_usd = 0 WHERE id = %s",
-                 (int((time.monotonic() - started) * 1000), run_id))
-    conn.execute("INSERT INTO agent_outputs (run_id, envelope) VALUES (%s, %s)", (run_id, Jsonb(env.model_dump(mode="json"))))
-    return env
+    """Compute and log to agent_runs/agent_outputs; failures are logged and re-raised."""
+    return run_logged(conn, AGENT_ID, inp.subject, datetime.combine(inp.as_of, MARKET_CLOSE, IST),
+                      lambda: compute(*load_inputs(conn, inp.subject, inp.as_of), inp.as_of, datetime.now(IST)))
 
 
 if __name__ == "__main__":
