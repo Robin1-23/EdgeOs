@@ -123,6 +123,17 @@ def split(rows: list[tuple]) -> dict[bool, dict[str, Statement]]:
     return out
 
 
+def pick_statements(rows: list[tuple], as_of: date) -> tuple[bool, Statement, Statement, date] | None:
+    """(consolidated?, annual, quarterly, latest FY end) for the basis with the latest annual revenue on or before
+    as_of; consolidated wins ties. None if neither basis has annual revenue."""
+    stmts = split([r for r in rows if r[0] <= as_of])
+    latest = {c: max((d for d, v in stmts[c]["A"].items() if "revenue_ops" in v), default=None) for c in (True, False)}
+    if latest[True] is None and latest[False] is None:
+        return None
+    consolidated = latest[True] is not None and (latest[False] is None or latest[True] >= latest[False])
+    return consolidated, stmts[consolidated]["A"], stmts[consolidated]["Q"], latest[consolidated]
+
+
 def compute(isin: str, symbol: str | None, rows: list[tuple], as_of: date, retrieved_at: datetime) -> Envelope:
     subject = symbol or isin
     metrics: list[Metric] = []
@@ -132,21 +143,18 @@ def compute(isin: str, symbol: str | None, rows: list[tuple], as_of: date, retri
     def add(mid: str, name: str, value: float | str, formula: str, unit: str | None = "ratio"):
         metrics.append(Metric(id=mid, name=name, value=value, unit=unit, formula_id=formula, source_query_id="financials"))
 
-    stmts = split([r for r in rows if r[0] <= as_of])
-    latest = {c: max((d for d, v in stmts[c]["A"].items() if "revenue_ops" in v), default=None) for c in (True, False)}
-    if latest[True] is None and latest[False] is None:
+    picked = pick_statements(rows, as_of)
+    if picked is None:
         return Envelope(agent_id=AGENT_ID, subject=subject, as_of=datetime.combine(as_of, dtime(0), IST), metrics=[], findings=[],
                         flags=[], sources=[], confidence=Confidence(level="low", reason="no annual revenue in financials"),
                         gaps=[Gap(item="financials", reason=f"no annual revenue_ops for {isin} on or before {as_of} "
                                                             "(banks/NBFCs/insurers are not covered by the current line items)")])
-    consolidated = latest[True] is not None and (latest[False] is None or latest[True] >= latest[False])
-    annual, quarters = stmts[consolidated]["A"], stmts[consolidated]["Q"]
+    consolidated, annual, quarters, fy = picked
     basis = "consolidated" if consolidated else "standalone"
     if not consolidated:
         gaps.append(Gap(item="consolidated statements", reason="not available for the latest year; standalone used"))
         flags.append(Flag(severity="info", reason="figures are standalone, not consolidated"))
     ends = sorted(annual)
-    fy = latest[consolidated]
     cur = annual[fy]
     prev = annual.get(years_back(fy, 1), {})
     label = fy_label(fy)
