@@ -12,7 +12,7 @@ from datetime import date
 from pathlib import Path
 from typing import Protocol
 
-from services.pipelines import amfi_nav, nse_bhavcopy, nse_indices
+from services.pipelines import amfi_nav, fundamentals, nse_bhavcopy, nse_indices
 from services.pipelines.common import RAW_DATA_DIR, PipelineError
 
 
@@ -30,6 +30,10 @@ class SourceAdapter(Protocol):
 
     def fund_navs_month(self, year: int, month: int, today: date) -> amfi_nav.Parsed | None:
         """Every NAV published in a calendar month (history backfill); None when the month is unavailable."""
+
+    def fundamentals(self, isin: str) -> fundamentals.Parsed | None:
+        """All quarterly/annual financials for one company, mapped to fundamentals.ITEMS (build() validates);
+        None when the source has nothing for it."""
 
 
 class DevLocal:
@@ -78,6 +82,9 @@ class DevLocal:
         text = self._text("amfi_history", f"NAVHistory_{year}-{month:02d}.txt")
         return amfi_nav.parse(text, today) if text is not None else None
 
+    def fundamentals(self, isin: str) -> fundamentals.Parsed | None:
+        return None  # no permitted source was ever downloaded; tests use fixtures, production uses the vendor
+
 
 class LicensedVendor:
     """Stub for a licensed feed (e.g. Accord/ACE, CMOTS, NSE Data & Analytics). Implement each method by mapping
@@ -104,6 +111,9 @@ class LicensedVendor:
 
     def fund_navs_month(self, year: int, month: int, today: date) -> amfi_nav.Parsed | None:
         self._todo("fund_navs_month", "amfi_nav.Parsed")
+
+    def fundamentals(self, isin: str) -> fundamentals.Parsed | None:
+        self._todo("fundamentals", "fundamentals.build(records) over fundamentals.ITEMS")
 
 
 ADAPTERS: dict[str, type] = {"dev_local": DevLocal, "licensed_vendor": LicensedVendor}
