@@ -1,4 +1,5 @@
 import os
+import sys
 
 import psycopg
 import pytest
@@ -35,3 +36,31 @@ def db_conn():
         migrate(conn)
         yield conn
         conn.rollback()
+
+
+# Formula catalogue check: every formula_id an agent's compute emits during the run must have a definition in
+# services/agents/formulas.py, or the run fails. Records envelopes built inside desks/ modules (not test fakes).
+_SEEN_FORMULAS: set[tuple[str, str]] = set()
+
+
+def pytest_configure(config):
+    from services.agents import envelope
+
+    init = envelope.Envelope.__init__
+
+    def recording(self, *args, **kwargs):
+        init(self, *args, **kwargs)
+        caller = sys._getframe(1).f_code.co_filename
+        if f"{os.sep}desks{os.sep}" in caller and f"{os.sep}tests{os.sep}" not in caller:
+            _SEEN_FORMULAS.update((self.agent_id, m.formula_id) for m in self.metrics)
+
+    envelope.Envelope.__init__ = recording
+
+
+def pytest_sessionfinish(session, exitstatus):
+    from services.agents.formulas import describe
+
+    missing = sorted(f"{a} {f}" for a, f in _SEEN_FORMULAS if describe(a, f) is None)
+    if missing:
+        print(f"\nformula ids with no definition in services/agents/formulas.py: {', '.join(missing)}", file=sys.stderr)
+        session.exitstatus = 1
