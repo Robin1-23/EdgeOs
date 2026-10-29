@@ -190,8 +190,9 @@ def load_inputs(conn: psycopg.Connection, subject: str, as_of: date):
     return isin, symbol, filings, providers
 
 
-def summarize(conn: psycopg.Connection, symbol: str, filings: list[dict]) -> dict[int, FilingSummary | str]:
-    """Cached summary per filing, else one specialist call; an LLMError becomes that filing's gap reason."""
+def summarize(conn: psycopg.Connection, symbol: str, filings: list[dict], cache_only: bool = False) -> dict[int, FilingSummary | str]:
+    """Cached summary per filing, else one specialist call; an LLMError becomes that filing's gap reason.
+    cache_only (the verifier's recompute) never calls the LLM: uncached filings are reported as not cached."""
     model, out = llm_config.MODELS["specialist"], {}
     for f in filings:
         if not f["text"]:
@@ -200,6 +201,9 @@ def summarize(conn: psycopg.Connection, symbol: str, filings: list[dict]) -> dic
                               " AND prompt_version = %s", (f["id"], f["sha"], model, PROMPT_VERSION)).fetchone()
         if cached:
             out[f["id"]] = FilingSummary.model_validate(cached[0])
+            continue
+        if cache_only:
+            out[f["id"]] = "no cached summary"
             continue
         try:
             s = call_json("specialist", SYSTEM, prompt(symbol, f), FilingSummary).value

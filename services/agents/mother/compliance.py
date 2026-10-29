@@ -157,26 +157,46 @@ LLM_SYSTEM = (
 )
 
 
-def guard(text: str, use_llm: bool = True, provider: Provider | None = None) -> GuardResult:
-    """Rule pass, then (optionally) an LLM pass over the remaining sentences; returns sanitized text + disclaimer."""
-    removed = check(text)
-    bad = {v.sentence for v in removed}
-    kept = [s for s in split_sentences(text) if s not in bad]
+@dataclass
+class ManyResult:
+    texts: list[str | None]  # sanitized text per input (no disclaimer); None when nothing in it survived
+    removed: list[Violation] = field(default_factory=list)
+    llm_checked: bool = False
+    blocked: str | None = None  # set when the LLM pass failed: nothing may be published
+
+
+def guard_many(texts: list[str], use_llm: bool = True, provider: Provider | None = None) -> ManyResult:
+    """Rules on each text, then one LLM pass over every remaining sentence of all texts (one call per report)."""
+    removed: list[Violation] = []
+    kept: list[list[str]] = []
+    for text in texts:
+        found = check(text)
+        removed += found
+        bad = {v.sentence for v in found}
+        kept.append([s for s in split_sentences(text) if s not in bad])
     llm_checked = False
-    if use_llm and kept:
-        numbered = "\n".join(f"[{i}] {s}" for i, s in enumerate(kept))
+    flat = [(i, j) for i, sentences in enumerate(kept) for j in range(len(sentences))]
+    if use_llm and flat:
+        numbered = "\n".join(f"[{n}] {kept[i][j]}" for n, (i, j) in enumerate(flat))
         try:
             verdict = call_json("specialist", LLM_SYSTEM, numbered, LLMVerdict, provider=provider).value
         except LLMError as e:
-            return GuardResult(text="", status="blocked", removed=removed, reason=f"LLM compliance check failed: {e}")
-        flagged = {i for i in verdict.flagged if 0 <= i < len(kept)}
+            return ManyResult(texts=[None] * len(texts), removed=removed, blocked=f"LLM compliance check failed: {e}")
         reasons = dict(zip(verdict.flagged, verdict.reasons))
-        removed += [Violation("llm", "llm", kept[i], reasons.get(i, "")) for i in sorted(flagged)]
-        kept = [s for i, s in enumerate(kept) if i not in flagged]
+        flagged = {flat[n] for n in verdict.flagged if 0 <= n < len(flat)}
+        removed += [Violation("llm", "llm", kept[i][j], reasons.get(flat.index((i, j)), "")) for i, j in sorted(flagged)]
+        kept = [[s for j, s in enumerate(sentences) if (i, j) not in flagged] for i, sentences in enumerate(kept)]
         llm_checked = True
-    if not kept:
-        return GuardResult(text="", status="blocked", removed=removed, llm_checked=llm_checked,
+    return ManyResult(texts=[" ".join(s) if s else None for s in kept], removed=removed, llm_checked=llm_checked)
+
+
+def guard(text: str, use_llm: bool = True, provider: Provider | None = None) -> GuardResult:
+    """Rule pass, then (optionally) an LLM pass over the remaining sentences; returns sanitized text + disclaimer."""
+    r = guard_many([text], use_llm, provider)
+    if r.blocked:
+        return GuardResult(text="", status="blocked", removed=r.removed, reason=r.blocked)
+    if r.texts[0] is None:
+        return GuardResult(text="", status="blocked", removed=r.removed, llm_checked=r.llm_checked,
                            reason="nothing left after removing non-compliant sentences")
-    body = " ".join(kept)
-    return GuardResult(text=f"{body}\n\n{DISCLAIMER}", status="redacted" if removed else "clean", removed=removed,
-                       llm_checked=llm_checked)
+    return GuardResult(text=f"{r.texts[0]}\n\n{DISCLAIMER}", status="redacted" if r.removed else "clean", removed=r.removed,
+                       llm_checked=r.llm_checked)

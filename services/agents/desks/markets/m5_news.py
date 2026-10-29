@@ -187,15 +187,16 @@ def load_inputs(conn: psycopg.Connection, inp: M5Input):
     return sec_id, isin, symbol, display, matched, {k: sorted(v) for k, v in providers.items()}
 
 
-def label(conn: psycopg.Connection, sec_id: int, display: str, headlines: list[dict]) -> tuple[dict, str | None]:
-    """Cached labels for these headlines; unlabelled ones (newest first, up to MAX_LABEL_BATCH) in one call."""
+def label(conn: psycopg.Connection, sec_id: int, display: str, headlines: list[dict], cache_only: bool = False) -> tuple[dict, str | None]:
+    """Cached labels for these headlines; unlabelled ones (newest first, up to MAX_LABEL_BATCH) in one call.
+    cache_only (the verifier's recompute) never calls the LLM."""
     model = llm_config.MODELS["specialist"]
     ids = [h["id"] for h in headlines]
     labels = {nid: (s, t) for nid, s, t in conn.execute(
         "SELECT news_id, sentiment, event_tag FROM news_labels WHERE security_id = %s AND model = %s AND prompt_version = %s"
         " AND news_id = ANY(%s)", (sec_id, model, PROMPT_VERSION, ids))}
     todo = sorted((h for h in headlines if h["id"] not in labels), key=lambda h: h["published_at"], reverse=True)[:MAX_LABEL_BATCH]
-    if not todo:
+    if not todo or cache_only:
         return labels, None
     try:
         result = call_json("specialist", SYSTEM, prompt(display, [(i, h["headline"]) for i, h in enumerate(todo)]), NewsLabels).value

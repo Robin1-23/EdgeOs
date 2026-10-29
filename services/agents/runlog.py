@@ -3,6 +3,7 @@
 import time
 from collections.abc import Callable
 from datetime import datetime
+from typing import TypeVar
 
 import psycopg
 from psycopg.types.json import Jsonb
@@ -12,6 +13,7 @@ from services.agents.llm.client import current_run
 
 RUN_COST = "(SELECT coalesce(sum(cost_usd), 0) FROM llm_calls WHERE run_id = %s)"
 Providers = dict[str, list[str]]  # envelope source id -> data_sources names of the rows it read
+T = TypeVar("T")
 
 
 def with_providers(env: Envelope, providers: Providers) -> Envelope:
@@ -28,11 +30,10 @@ def is_public(conn: psycopg.Connection, env: Envelope) -> bool:
     return public == len(names)
 
 
-def run_logged(conn: psycopg.Connection, agent_id: str, subject: str, as_of: datetime,
-               compute: Callable[[], tuple[Envelope, Providers]]) -> Envelope:
-    """Log a 'running' row, compute, then mark ok (+ store the envelope with providers and public_ok) or
-    failed (+ re-raise). LLM calls made during compute are attributed to this run (llm_calls) and
-    agent_runs.cost_usd is their total, for failed runs too."""
+def run_tracked(conn: psycopg.Connection, agent_id: str, subject: str, as_of: datetime,
+                work: Callable[[int], T]) -> T:
+    """agent_runs row around `work(run_id)`: 'running', then ok or failed (+ re-raise). LLM calls made inside are
+    attributed to the run (llm_calls) and agent_runs.cost_usd is their total, for failed runs too."""
     started = time.monotonic()
     (run_id,) = conn.execute(
         "INSERT INTO agent_runs (agent_id, subject, as_of, status) VALUES (%s, %s, %s, 'running') RETURNING id",
@@ -40,8 +41,7 @@ def run_logged(conn: psycopg.Connection, agent_id: str, subject: str, as_of: dat
     ).fetchone()
     token = current_run.set((conn, run_id))
     try:
-        env, providers = compute()
-        env = with_providers(env, providers)
+        result = work(run_id)
     except Exception as e:
         conn.execute(f"UPDATE agent_runs SET status = 'failed', error = %s, duration_ms = %s, cost_usd = {RUN_COST} WHERE id = %s",
                      (f"{type(e).__name__}: {e}", int((time.monotonic() - started) * 1000), run_id, run_id))
@@ -50,6 +50,17 @@ def run_logged(conn: psycopg.Connection, agent_id: str, subject: str, as_of: dat
         current_run.reset(token)
     conn.execute(f"UPDATE agent_runs SET status = 'ok', duration_ms = %s, cost_usd = {RUN_COST} WHERE id = %s",
                  (int((time.monotonic() - started) * 1000), run_id, run_id))
-    conn.execute("INSERT INTO agent_outputs (run_id, envelope, public_ok) VALUES (%s, %s, %s)",
-                 (run_id, Jsonb(env.model_dump(mode="json")), is_public(conn, env)))
-    return env
+    return result
+
+
+def run_logged(conn: psycopg.Connection, agent_id: str, subject: str, as_of: datetime,
+               compute: Callable[[], tuple[Envelope, Providers]]) -> Envelope:
+    """run_tracked for specialists: also stores the envelope (with providers) and its public_ok in agent_outputs."""
+    def work(run_id: int) -> Envelope:
+        env, providers = compute()
+        env = with_providers(env, providers)
+        conn.execute("INSERT INTO agent_outputs (run_id, envelope, public_ok) VALUES (%s, %s, %s)",
+                     (run_id, Jsonb(env.model_dump(mode="json")), is_public(conn, env)))
+        return env
+
+    return run_tracked(conn, agent_id, subject, as_of, work)
