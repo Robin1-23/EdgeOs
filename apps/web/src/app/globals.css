@@ -3,24 +3,53 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --muted: #5f6368;
+  --line: #e5e7eb;
+  --panel: #f8f9fa;
+  --accent: #1d4ed8;
+  --up: #15803d;
+  --down: #b91c1c;
+  --watch: #a16207;
+  --alert: #b91c1c;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-panel: var(--panel);
+  --color-accent: var(--accent);
+  --color-up: var(--up);
+  --color-down: var(--down);
+  --color-watch: var(--watch);
+  --color-alert: var(--alert);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
+    --background: #0b0c0e;
     --foreground: #ededed;
+    --muted: #9aa0a6;
+    --line: #26282c;
+    --panel: #141518;
+    --accent: #8ab4f8;
+    --up: #4ade80;
+    --down: #f87171;
+    --watch: #facc15;
+    --alert: #f87171;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* citation targets: briefly highlight the row a citation jumps to */
+:target {
+  scroll-margin-top: 5rem;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
 }

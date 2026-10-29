@@ -1,103 +1,65 @@
-import Image from "next/image";
+import { DevBanner } from "@/components/Notices";
+import { SearchBox } from "@/components/SearchBox";
+import { apiGet } from "@/lib/api";
+import { formatChange, formatDate, formatValue } from "@/lib/format";
+import type { Home } from "@/lib/types";
 
-export default function Home() {
+export const revalidate = 300;
+
+export default async function HomePage() {
+  const home = await apiGet<Home>("/api/home");
+  const data = home.ok ? home.data : null;
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="space-y-10">
+      <DevBanner show={!!data?.dev_only} />
+      <section className="flex flex-col items-center gap-4 pt-6 text-center">
+        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Research Indian stocks and funds</h1>
+        <p className="max-w-xl text-muted">
+          What the filings, prices and fund portfolios show, with the formula and source behind every number.
+        </p>
+        <SearchBox />
+      </section>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      <section aria-labelledby="market-title">
+        <h2 id="market-title" className="mb-3 text-sm font-semibold text-muted">
+          Market overview
+        </h2>
+        {!data ? (
+          <p className="text-sm text-muted">Market data is not available right now ({home.ok ? "" : home.detail}).</p>
+        ) : (
+          <>
+            <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+              {data.indices.map((i) => (
+                <li key={i.name} className="rounded-lg border border-line p-3">
+                  <p className="truncate text-xs text-muted">{i.name}</p>
+                  <p className="mt-1 font-mono text-lg tabular-nums">{formatValue(i.close, null)}</p>
+                  <p className={`font-mono text-xs tabular-nums ${i.change === null ? "text-muted" : i.change >= 0 ? "text-up" : "text-down"}`}>
+                    {formatChange(i.change)} <span className="text-muted">· {formatDate(i.date)}</span>
+                  </p>
+                </li>
+              ))}
+            </ul>
+            {data.breadth && <Breadth b={data.breadth} />}
+          </>
+        )}
+      </section>
+    </div>
+  );
+}
+
+function Breadth({ b }: { b: NonNullable<Home["breadth"]> }) {
+  const total = b.advances + b.declines + b.unchanged || 1;
+  return (
+    <div className="mt-4 rounded-lg border border-line p-3">
+      <p className="text-xs text-muted" title={b.formula}>
+        NSE stocks on {formatDate(b.date)}: {b.advances.toLocaleString("en-IN")} rose, {b.declines.toLocaleString("en-IN")} fell,{" "}
+        {b.unchanged.toLocaleString("en-IN")} unchanged
+      </p>
+      <div className="mt-2 flex h-2 overflow-hidden rounded" aria-hidden>
+        <div className="bg-up" style={{ width: `${(100 * b.advances) / total}%` }} />
+        <div className="bg-muted/40" style={{ width: `${(100 * b.unchanged) / total}%` }} />
+        <div className="bg-down" style={{ width: `${(100 * b.declines) / total}%` }} />
+      </div>
     </div>
   );
 }
