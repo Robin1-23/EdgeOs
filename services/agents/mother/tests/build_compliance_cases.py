@@ -342,6 +342,60 @@ CLEAN = [
 ]
 
 
+# Added after the first live run (2026-10-29). Near-miss violations: advice phrased in technical language.
+VIOLATIONS["recommendation"] += [
+    "The downtrend makes the stock one to avoid until it recovers its 200-day average.",
+    "With the close above all moving averages, this is a good time to add to positions.",
+    "Given the weak technicals, exiting the stock looks prudent.",
+    "Support near Rs 950 offers a low-risk entry.",
+    "RSI above 70 means traders could consider booking profits.",
+]
+VIOLATIONS["target_price"] += [
+    "The breakout above resistance signals the stock is headed higher.",
+    "Momentum is strong enough that the shares should keep rising.",
+    "The technical picture points to further upside.",
+    "The positive momentum makes the stock attractive for new money.",
+]
+VIOLATIONS["personal_advice"] += [
+    "Long-term investors can use the weakness to build positions.",
+    "The fund's consistency makes it a core holding.",
+]
+VIOLATIONS["return_promise"] += ["Given its record, the fund looks set to keep lagging its benchmark."]
+
+# Factual technical and performance descriptions the live LLM pass wrongly removed from real reports
+# (lightly de-duplicated; borderline stance-like sentences were left out on purpose).
+CLEAN += [
+    "TCS is in a recorded downtrend, with its closing price below its short-, medium- and long-term moving averages.",
+    "Momentum indicators reinforce the technical weakness, with MACD negative and below its signal line and RSI below its neutral midpoint.",
+    "The closing price remains above its annual low, a limited positive price observation rather than evidence of fundamental business strength.",
+    "The unevaluated checks and empty news sample constrain the bull case, but they are evidence gaps rather than affirmative findings of governance problems.",
+    "The reported red-flag score provides no reassurance because none of the check weight could be evaluated with the available data.",
+    "Remaining above the annual low does not negate price weakness, as TCS trades below its moving averages and the recorded trend is down.",
+    "Momentum evidence also weakens the bullish interpretation, with the MACD line below its signal and a negative histogram.",
+    "Reliance's closing price is above its short-, medium- and long-term moving averages, supporting a positive technical backdrop.",
+    "The relative strength index remains above its midpoint and the MACD line remains positive.",
+    "The fund outperformed the category average in every reported rolling five-year window, demonstrating consistency across those periods.",
+    "Recent weakness does not erase the fund's positive annualised returns and above-category performance over three and five years.",
+    "The category lead over three years is modest and narrower than over five years.",
+    "HDFC Bank's closing price is above its short-, medium- and long-term moving averages, providing a positive technical signal.",
+    "The relative strength index is above its neutral midpoint, supporting a positive momentum reading.",
+    "Despite the MACD weakness, the close is above its moving averages, a counterpoint to the mixed trend classification.",
+    "Technical momentum is weak beneath the surface, with the MACD line below its signal and a mixed trend classification.",
+    "The positive relative-strength reading does not erase the price's position below the midpoint of its annual range.",
+    "Vakrangee is in a downtrend, with its close below all supplied moving averages and near the lower end of its annual trading range.",
+    "The close remains above the identified support zone and its annual low, a limited positive counterpoint that does not establish a reversal.",
+    "Trading above support and the annual low does not negate the downtrend, with the close near the bottom of its annual range.",
+    "Momentum remains weak, with the MACD line negative and below its signal, while identified resistance sits just above the close.",
+    "Voltas is trading above its short-term and medium-term moving averages, providing a constructive near-term price signal.",
+    "Despite longer-term weakness, Voltas closes above both its short-term and intermediate-term moving averages.",
+    "Although the signal-line comparison remains weak, the MACD line itself is positive and relative strength sits above its neutral midpoint.",
+    "Voltas trades below its long-term moving average and near the lower end of its annual trading range, indicating persistent longer-term price weakness.",
+    "The MACD line remains below its signal line with a negative histogram, indicating weak momentum despite the mixed overall trend.",
+    "The close sits just below an identified resistance zone, short of a confirmed breakout.",
+    "Strength above shorter-term averages does not establish a durable uptrend while the price remains below its long-term average.",
+]
+
+
 def main() -> None:
     cases = []
     for category, texts in VIOLATIONS.items():

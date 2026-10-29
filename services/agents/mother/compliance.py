@@ -40,7 +40,7 @@ RULES: list[tuple[str, str, str]] = [
     ("rec_imperative_hold", "recommendation", r"^[\W_]*hold\s+(?:on|the|this|it|your|for|till|until|tight)\b"),
     ("rec_imperative_exit", "recommendation", r"^[\W_]*exit\s+(?:the|this|your|now|at|before|on)\b"),
     ("rec_time_to", "recommendation", r"\b(?:time|moment|opportunity|chance|occasion)\s+to\s+(?:buy|sell|exit|enter|accumulate|invest|book\s+profits?|get\s+in|get\s+out|load\s+up|switch|add|cash\s+out|lock\s+in\s+gains)\b"),
-    ("rec_entry_point", "recommendation", r"\b(?:attractive|good|great|ideal|perfect|decent)\s+(?:entry|exit|buying|selling)\s+(?:point|level|price|opportunity|zone)s?\b"),
+    ("rec_entry_point", "recommendation", r"\b(?:attractive|good|great|ideal|perfect|decent)\s+(?:entry|exit|buying|selling)\s+(?:point|level|price|opportunity|zone)s?\b|\b(?:low[\s-]risk|safe|cheap)\s+(?:entry|buying\s+opportunity|entry\s+point)\b"),
     ("rec_on_dips", "recommendation", r"\b(?:buy|add|accumulate)\s+(?:on|in|during)\s+(?:the\s+)?(?:dips?|declines?|corrections?)\b|\bsell\s+(?:on|into)\s+(?:the\s+)?(?:rise|rallies|rally|strength)\b"),
     ("rec_book_profits", "recommendation", r"\bbook(?:ing)?\s+(?:partial\s+|some\s+)?profits?\b"),
     ("rec_stop_loss", "recommendation", r"\b(?:keep|place|put|set|maintain|use|trail|with)\s+(?:a\s+|the\s+|your\s+)?(?:strict\s+|tight\s+|trailing\s+)?stop[\s-]?loss\b|\bstop[\s-]?loss\s+(?:at|below|above|of|near|around)\b"),
@@ -49,7 +49,9 @@ RULES: list[tuple[str, str, str]] = [
     ("rec_stay_invested", "recommendation", r"\b(?:stay|remain|keep)\s+invested\b"),
     ("rec_at_price", "recommendation", rf"\b(?:buy|sell|accumulate|add|exit)\s+(?:at|around|near|below|above|between|under|over)\s+{_P}"),
     ("rec_go_long", "recommendation", r"\bgo(?:ing)?\s+(?:long|short)\b"),
-    ("rec_avoid_stock", "recommendation", r"\bavoid\s+(?:the|this|these|such)\s+(?:stock|share|fund|scheme|counter|company|name)s?\b"),
+    ("rec_avoid_stock", "recommendation", r"\bavoid\s+(?:the|this|these|such)\s+(?:stock|share|fund|scheme|counter|company|name)s?\b|\bone\s+to\s+(?:avoid|buy|own|watch\s+for\s+entry)\b"),
+    ("rec_prudent", "recommendation", r"\b(?:buying|selling|exiting|accumulating|trimming|holding|adding|redeeming|switching|averaging)\b[^.]{0,40}?\b(?:looks|seems|is|appears|would\s+be)\s+(?:prudent|advisable|sensible|wise|smart|logical)\b|\b(?:prudent|advisable|sensible|wise)\s+to\s+(?:buy|sell|exit|hold|accumulate|book|avoid|switch|redeem|add|reduce|trim)\b"),
+    ("rec_use_the_dip", "recommendation", r"\b(?:use|treat)\s+(?:the|this|any)\s+(?:weakness|dip|fall|decline|correction|rally|strength|pullback)\s+(?:to|as)\b"),
     ("rec_dont", "recommendation", r"\b(?:do\s+not|don'?t|never)\s+(?:buy|sell|miss|chase|panic[\s-]sell)\b"),
     ("rec_must_buy", "recommendation", r"\bmust[\s-](?:buy|own|have|sell)\b|\btop\s+picks?\b|\bpick\s+of\s+the\s+(?:week|month|year)\b"),
     ("rec_to_buy", "recommendation", r"\b(?:stocks?|shares?|funds?|schemes?)\s+to\s+(?:buy|sell|own|hold|avoid|accumulate)\b"),
@@ -60,10 +62,11 @@ RULES: list[tuple[str, str, str]] = [
     ("tp_tp", "target_price", r"\btp\s*(?:of|at|:|-)?\s*(?:₹|rs\.?|inr)?\s*\d"),
     ("tp_fair_value", "target_price", rf"\b(?:fair|intrinsic|true|fundamental)\s+value\b(?!\s+(?:through|changes?|gains?|loss(?:es)?|hierarchy|measurement|of\s+(?:investments|financial|derivatives?|plan\s+assets|assets|liabilities)))[^.]{{0,40}}?{_PRICE}|\b(?:fair|intrinsic)\s+value\s+per\s+share\b"),
     ("tp_mis_valued", "target_price", r"\b(?:under|over)[\s-]?valued\b|\bmis[\s-]?priced\b"),
-    ("tp_cheap", "target_price", rf"\b{_SUBJ}\s+(?:is|are|look|looks|appear|appears|seem|seems|remain|remains|trades\s+as)\s+(?:very\s+|quite\s+|still\s+|too\s+)?(?:cheap|expensive|attractive|a\s+bargain|a\s+steal|pricey|rich|overheated|oversold|overbought)\b"),
+    ("tp_cheap", "target_price", rf"\b{_SUBJ}\s+(?:is|are|look|looks|appear|appears|seem|seems|remain|remains|trades\s+as)\s+(?:very\s+|quite\s+|still\s+|too\s+)?(?:cheap|expensive|attractive|a\s+bargain|a\s+steal|pricey|rich|overheated|oversold|overbought)\b|\bmakes?\s+(?:the|this|these)\s+{_SUBJ}\s+(?:attractive|cheap|expensive|compelling|a\s+bargain|a\s+buy|a\s+sell)\b"),
     ("tp_forecast", "target_price", rf"\b{_SUBJ}\b[^.]{{0,40}}?\b(?:could|can|will|may|might|should|is\s+likely\s+to|are\s+likely\s+to|is\s+expected\s+to|is\s+set\s+to|is\s+poised\s+to|is\s+headed\s+to|is\s+bound\s+to)\s+(?:reach|touch|hit|rise\s+to|climb\s+to|rally\s+to|fall\s+to|drop\s+to|slip\s+to|test|go\s+to|cross|head\s+(?:to|towards)|scale|breach)\b"),
     ("tp_price_forecast", "target_price", rf"\b(?:is|are)\s+(?:headed|heading|set|poised|likely|expected|bound)\s+(?:to|for|towards)\s+{_PRICE}|\b(?:will|could|can|may|might|should)\s+(?:reach|touch|hit|rise\s+to|climb\s+to|rally\s+to|fall\s+to|drop\s+to|slip\s+to|test|go\s+to|cross|scale|breach)\s+{_PRICE}"),
-    ("tp_upside", "target_price", r"\b(?:upside|downside)\s+(?:potential|of|to|target|risk\s+of|is\s+limited|is\s+capped|from\s+here)\b|\b\d+(?:\.\d+)?\s*%\s+(?:upside|downside)\b"),
+    ("tp_upside", "target_price", r"\b(?:upside|downside)\s+(?:potential|of|to|target|risk\s+of|is\s+limited|is\s+capped|from\s+here)\b|\b\d+(?:\.\d+)?\s*%\s+(?:upside|downside)\b|\b(?:further|more|significant|meaningful|limited|substantial)\s+(?:upside|downside)\b"),
+    ("tp_direction", "target_price", rf"\b{_SUBJ}\b[^.]{{0,40}}?\b(?:is|are)\s+(?:headed|heading|poised|set|likely|expected|bound)\s+(?:to\s+(?:move\s+|go\s+|trend\s+)?)?(?:higher|lower|up|down)\b|\b{_SUBJ}\b[^.]{{0,40}}?\b(?:should|will|could|is\s+likely\s+to|are\s+likely\s+to)\s+(?:keep|continue)\s+(?:rising|falling|climbing|gaining|declining|going\s+up|going\s+down|sliding)\b"),
     # return promises / forecasts of returns
     ("ret_guaranteed", "return_promise", r"\b(?:guaranteed|assured|sure[\s-]?shot|risk[\s-]free|certain|promised|safe)\s+(?:returns?|profits?|gains?|income|money|wealth\s+creation)\b"),
     ("ret_risk_free", "return_promise", r"\brisk[\s-]free\b(?!\s+rate)"),
@@ -73,7 +76,7 @@ RULES: list[tuple[str, str, str]] = [
     ("ret_expected", "return_promise", r"\bexpected\s+(?:annual\s+|yearly\s+)?returns?\s+(?:of|is|are|around|near|at)\s+\d|\breturns?\s+of\s+\d+(?:\.\d+)?\s*%\s+(?:is|are)\s+(?:likely|expected|assured|guaranteed|possible|achievable)\b"),
     ("ret_you_can_expect", "return_promise", r"\b(?:you|investors|one)\s+(?:can|could|will|should|may)\s+(?:expect|earn|make|get|see|pocket)\s+(?:returns?\s+of\s+|gains?\s+of\s+|about\s+|around\s+)?\d+(?:\.\d+)?\s*(?:%|x\b|times)"),
     ("ret_multibagger", "return_promise", r"\bmulti[\s-]?baggers?\b|\b\d+[\s-]?baggers?\b|\bwealth\s+creator\s+for\s+you\b"),
-    ("ret_will_outperform", "return_promise", r"\b(?:will|is\s+set\s+to|is\s+likely\s+to|should|is\s+expected\s+to|is\s+bound\s+to)\s+(?:outperform|beat|underperform|lag)\b"),
+    ("ret_will_outperform", "return_promise", r"\b(?:will|is\s+set\s+to|is\s+likely\s+to|should|is\s+expected\s+to|is\s+bound\s+to)\s+(?:outperform|beat|underperform|lag)\b|\b(?:set|likely|expected|bound|poised)\s+to\s+(?:keep|continue)\s+(?:outperforming|underperforming|lagging|beating|trailing)\b"),
     # ratings / stances
     ("rate_stance_word", "rating", r"\b(?:overweight|underweight|outperform|underperform|neutral|equal[\s-]?weight|market[\s-]?perform|sector[\s-]?perform|positive|negative)\s+(?:rating|call|stance|recommendation|view\s+on\s+the\s+stock)\b"),
     ("rate_we_are", "rating", r"\b(?:we|i)\s+(?:are|am|remain|stay|turn|turned|became|become|have\s+(?:turned|become)|are\s+turning|am\s+turning)\s+(?:overweight|underweight|bullish|bearish|positive|negative|constructive|cautious)\b"),
@@ -85,7 +88,7 @@ RULES: list[tuple[str, str, str]] = [
     ("adv_your_money", "personal_advice", r"\b(?:put|park|invest|move|shift|keep|add|deploy|channel)\s+(?:all\s+|some\s+|part\s+|a\s+portion\s+|a\s+part\s+)?(?:of\s+)?(?:your|their)\s+(?:money|savings|funds|capital|corpus|portfolio|bonus|surplus)\b"),
     ("adv_suitable", "personal_advice", r"\b(?:suitable|right|ideal|perfect|good|great|best|apt)\s+(?:[\w-]+\s+){0,2}?for\s+(?:you\b|your\b|investors\s+like\s+you|conservative\s+investors|aggressive\s+investors|retirees|beginners|first[\s-]time\s+investors|long[\s-]term\s+investors)"),
     ("adv_if_you", "personal_advice", r"\bif\s+you\s+(?:are|have|want|hold|own|plan|seek|need)\b[^.]*?\b(?:buy|sell|hold|exit|switch|invest|add|redeem|consider|accumulate|book)\b"),
-    ("adv_add_to_portfolio", "personal_advice", r"\b(?:add|include|keep)\s+(?:it|this|the\s+stock|the\s+fund|this\s+fund|this\s+stock|these\s+shares|the\s+scheme)\s+(?:to|in)\s+(?:your|the|a)\s+(?:portfolio|watchlist|core\s+holdings)\b"),
+    ("adv_add_to_portfolio", "personal_advice", r"\b(?:add|include|keep)\s+(?:it|this|the\s+stock|the\s+fund|this\s+fund|this\s+stock|these\s+shares|the\s+scheme)\s+(?:to|in)\s+(?:your|the|a)\s+(?:portfolio|watchlist|core\s+holdings)\b|\b(?:makes?\s+it|is)\s+an?\s+(?:core|portfolio|ideal)\s+holding\b|\bbuild\s+(?:a\s+)?positions?\b"),
     ("adv_invest_now", "personal_advice", r"\binvest\s+(?:now|today|immediately|regularly|via\s+sip|through\s+sip|in\s+(?:this|the)\s+(?:fund|stock|scheme|company))\b|\bstart\s+an?\s+sips?\b"),
     ("adv_portfolio_of", "personal_advice", r"\b(?:your|their)\s+(?:portfolio|holdings?)\s+(?:should|must|needs?\s+to|ought\s+to)\b"),
     # fund actions
@@ -148,12 +151,21 @@ class LLMVerdict(BaseModel):
 
 
 LLM_SYSTEM = (
-    "You are a compliance checker for an Indian investment-research website that is not SEBI-registered. "
-    "Text must only describe facts. Flag a sentence if it, directly or by implication, recommends buying, selling, "
-    "holding, switching or exiting; gives or implies a target price, fair value or price forecast; promises or "
-    "forecasts returns; states a rating or a bullish/bearish stance; or gives advice personal to the reader. "
-    "Do not flag factual restatements of past events, reported results, management guidance attributed to "
-    "management, or terms like exit load or downside capture. Reply with the indexes of sentences to remove."
+    "You are a compliance checker for an Indian investment-research website that is not SEBI-registered. It may "
+    "describe facts and measurements; it may not advise. Flag a sentence only if it: tells or nudges the reader to "
+    "buy, sell, hold, add, trim, switch, exit or redeem (including 'good entry point', 'one to avoid', 'looks "
+    "prudent to exit'); states or implies where the price, NAV or returns will go (a target, fair value, 'headed "
+    "higher', 'should keep rising', 'further upside', expected or assured returns); gives a rating or the writer's "
+    "own stance on the security ('we are bullish', 'attractive buy'); or is advice aimed at the reader's own money "
+    "('suitable for you', 'add to your portfolio').\n"
+    "Do NOT flag descriptions of what indicators and data show, even when they use words like positive, negative, "
+    "weak, strong, bullish, bearish, uptrend or downtrend about an indicator reading: e.g. 'The stock is in a "
+    "downtrend, with its close below the 200-day average', 'RSI is above its midpoint, a positive momentum "
+    "reading', 'Momentum is weak with MACD below its signal', 'The fund beat its category in every rolling window'. "
+    "Also do not flag comparisons with history, peers or benchmarks, statements that data is missing, past "
+    "events, reported results, management guidance attributed to management, or terms like exit load or "
+    "downside capture. When unsure whether a sentence describes or advises, it describes only if it would stay "
+    "true and useful without any action or forecast attached. Reply with the indexes of sentences to remove."
 )
 
 
