@@ -1,0 +1,18 @@
+{
+  "request": {
+    "model": "gpt-6-luna",
+    "schema_name": "FilingSummary",
+    "effort": "low",
+    "system": "You restate an Indian listed company's stock-exchange filing in plain English. Only restate what the filing says: never add facts, opinions, forecasts, ratings, price views or advice, and never compute new numbers. For every statement copy a short verbatim quote from the filing that supports it, including every number you use. Put only forward-looking statements made by the company or its management in 'guidance', attributed to them. 'tone' describes management's own language, with verbatim quotes as evidence.",
+    "user": "Company: ACME\nFiling title: Financial results for Q2 FY27\nCategory: results\nFiled: 2026-10-20\n\n--- FILING TEXT ---\nAcme Widgets Limited - Outcome of Board Meeting. Revenue from operations for the quarter ended 30 September 2026 was Rs 206 crore, compared with Rs 176 crore in the same quarter last year. Profit after tax was Rs 22 crore. The Board declared an interim dividend of Rs 2 per share. Commenting on the results, the Managing Director said: “We are pleased with the steady demand and expect margins to improve in the second half of the year.” The company plans capital expenditure of Rs 40 crore in FY27."
+  },
+  "response": {
+    "text": "{\"event_tag\": \"results\", \"summary\": [{\"text\": \"Revenue from operations was Rs 206 crore in the quarter ended 30 September 2026, against Rs 176 crore a year earlier.\", \"quote\": \"Revenue from operations for the quarter ended 30 September 2026 was Rs 206 crore, compared with Rs 176 crore\"}, {\"text\": \"Profit after tax was Rs 22 crore.\", \"quote\": \"Profit after tax was Rs 22 crore.\"}, {\"text\": \"The board declared an interim dividend of Rs 2 per share.\", \"quote\": \"declared an interim dividend of Rs 2 per share\"}, {\"text\": \"Profit after tax rose 25% from a year earlier.\", \"quote\": \"Profit after tax was Rs 22 crore.\"}], \"guidance\": [{\"text\": \"The managing director said the company expects margins to improve in the second half of the year.\", \"quote\": \"expect margins to improve in the second half of the year\"}, {\"text\": \"The company plans capital expenditure of Rs 40 crore in FY27.\", \"quote\": \"The company plans capital expenditure of Rs 40 crore in FY27.\"}], \"tone\": \"positive\", \"tone_evidence\": [\"We are pleased with the steady demand\"]}",
+    "model": "gpt-6-luna",
+    "input_tokens": 153,
+    "cached_tokens": 0,
+    "output_tokens": 180,
+    "reasoning_tokens": 0
+  },
+  "origin": "hand-written test response (not captured from a live model)"
+}

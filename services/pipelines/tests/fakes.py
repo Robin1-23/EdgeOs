@@ -1,6 +1,8 @@
 from datetime import date
 
-from services.pipelines import amfi_nav, classification, fund_disclosures, fundamentals, governance, nse_bhavcopy, nse_indices
+from services.pipelines import (
+    amfi_nav, classification, filings, fund_disclosures, fundamentals, governance, nse_bhavcopy, nse_indices,
+)
 
 
 class FakeAdapter:
@@ -8,8 +10,10 @@ class FakeAdapter:
     Days not in the dicts return None (holiday / not available); every call is recorded."""
 
     def __init__(self, name="dev_local", prices=None, indices=None, navs_latest=None, months=None, financials=None,
-                 sectors=None, holdings=None, constituents=None, ters=None, shareholding=None, events=None):
+                 sectors=None, holdings=None, constituents=None, ters=None, shareholding=None, events=None,
+                 filing_records=None):
         self.name = name
+        self.filing_records = filing_records  # raw records for filings.build, or None
         # isin -> raw shareholding records; isin -> (event records, covered_until)
         self.shareholding_recs, self.events = shareholding or {}, events or {}
         # (year, month) -> raw records for fund_disclosures.build_*
@@ -71,3 +75,8 @@ class FakeAdapter:
             return None
         recs, covered_until = self.events[isin]
         return governance.build_events(recs, covered_until)
+
+    def filings(self, since: date):
+        if self.filing_records is None:
+            return None
+        return filings.build([r for r in self.filing_records if r[2].date() >= since])

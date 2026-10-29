@@ -12,7 +12,9 @@ from datetime import date
 from pathlib import Path
 from typing import Protocol
 
-from services.pipelines import amfi_nav, classification, fund_disclosures, fundamentals, governance, nse_bhavcopy, nse_indices
+from services.pipelines import (
+    amfi_nav, classification, filings, fund_disclosures, fundamentals, governance, nse_bhavcopy, nse_indices,
+)
 from services.pipelines.common import RAW_DATA_DIR, PipelineError
 
 
@@ -53,6 +55,9 @@ class SourceAdapter(Protocol):
     def corporate_events(self, isin: str) -> governance.Parsed | None:
         """Auditor resignations/appointments for one company with the date the source covered it up to
         (governance.build_events)."""
+
+    def filings(self, since: date) -> filings.Parsed | None:
+        """Filings (with plain text where available) filed on or after `since`, all companies (filings.build)."""
 
 
 class DevLocal:
@@ -122,6 +127,9 @@ class DevLocal:
     def corporate_events(self, isin: str) -> governance.Parsed | None:
         return None
 
+    def filings(self, since: date) -> filings.Parsed | None:
+        return None  # exchange announcement pages: terms forbid automated collection
+
 
 class LicensedVendor:
     """Stub for a licensed feed (e.g. Accord/ACE, CMOTS, NSE Data & Analytics). Implement each method by mapping
@@ -169,6 +177,9 @@ class LicensedVendor:
 
     def corporate_events(self, isin: str) -> governance.Parsed | None:
         self._todo("corporate_events", "governance.build_events(records, covered_until)")
+
+    def filings(self, since: date) -> filings.Parsed | None:
+        self._todo("filings", "filings.build(records) with extracted text")
 
 
 ADAPTERS: dict[str, type] = {"dev_local": DevLocal, "licensed_vendor": LicensedVendor}

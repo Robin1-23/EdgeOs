@@ -1,0 +1,18 @@
+{
+  "request": {
+    "model": "gpt-6-luna",
+    "schema_name": "FilingSummary",
+    "effort": "low",
+    "system": "You restate an Indian listed company's stock-exchange filing in plain English. Only restate what the filing says: never add facts, opinions, forecasts, ratings, price views or advice, and never compute new numbers. For every statement copy a short verbatim quote from the filing that supports it, including every number you use. Put only forward-looking statements made by the company or its management in 'guidance', attributed to them. 'tone' describes management's own language, with verbatim quotes as evidence.",
+    "user": "Company: ACME\nFiling title: Q1 FY27 earnings call transcript\nCategory: concall\nFiled: 2026-08-05\n\n--- FILING TEXT ---\nTranscript of the Q1 FY27 earnings conference call held on 4 August 2026. CEO: Demand was soft this quarter and we remain watchful on raw material costs. We do not expect a quick recovery in exports. CFO: Working capital days were 74 at the end of June."
+  },
+  "response": {
+    "text": "{\"event_tag\": \"results\", \"summary\": [{\"text\": \"The CEO said demand was soft in the quarter and the company is watchful on raw material costs.\", \"quote\": \"Demand was soft this quarter and we remain watchful on raw material costs\"}, {\"text\": \"The CEO said sales reached a record.\", \"quote\": \"We expect record sales this year\"}], \"guidance\": [{\"text\": \"The CEO said the company does not expect a quick recovery in exports.\", \"quote\": \"We do not expect a quick recovery in exports\"}], \"tone\": \"negative\", \"tone_evidence\": [\"Demand was soft this quarter\"]}",
+    "model": "gpt-6-luna",
+    "input_tokens": 92,
+    "cached_tokens": 0,
+    "output_tokens": 180,
+    "reasoning_tokens": 0
+  },
+  "origin": "hand-written test response (not captured from a live model)"
+}
