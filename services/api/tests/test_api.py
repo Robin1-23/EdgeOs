@@ -102,16 +102,48 @@ def test_dev_switch_refused_outside_dev_local(monkeypatch):
     main.check_config()  # allowed
 
 
-def test_fund_page_with_nav(client, db_conn):
-    db_conn.execute("INSERT INTO fund_schemes (amfi_code, name, amc, category, plan, scheme_type, source)"
-                    " VALUES ('100001', 'Alpha Flexi Cap', 'AMC', 'Equity', 'direct', 'open', %s)", (LIC,))
-    for d, v in ((D1, 10.0), (D2, 10.5)):
-        db_conn.execute("INSERT INTO fund_nav (amfi_code, nav_date, nav, source) VALUES ('100001', %s, %s, %s)", (d, v, LIC))
+def test_fund_page_has_scheme_details(client, db_conn):
+    db_conn.execute("INSERT INTO fund_schemes (amfi_code, name, amc, category, plan, option, scheme_type, source)"
+                    " VALUES ('100001', 'Alpha Flexi Cap', 'Alpha AMC', 'Equity Scheme - Flexi Cap Fund', 'direct', 'Growth', 'open', %s)", (LIC,))
     report(db_conn, "fund:100001", D2, public_ok=True, agents=[("MF2", "100001", env("MF2", "cagr_3"), True)])
-    body = client.get("/api/funds/100001", params={"from": "2026-01-01"}).json()
-    assert body["nav"] == [{"date": str(D1), "nav": 10.0}, {"date": str(D2), "nav": 10.5}]
+    body = client.get("/api/funds/100001").json()
+    assert body["meta"] == {"name": "Alpha Flexi Cap", "amc": "Alpha AMC", "category": "Equity Scheme - Flexi Cap Fund",
+                            "plan": "direct", "option": "Growth"}
     assert body["agents"]["MF2"]["envelope"]["metrics"][0]["formula"].startswith("3-year annualised return")
+    assert body["agents"]["MF1"] == {"available": False, "reason": "no result for this date"}
     assert client.get("/api/funds/999999").status_code == 404
+
+
+def test_stock_page_has_company_details(client, db_conn):
+    stock(db_conn, "INE000000001", "ACME", "Acme Widgets Limited")
+    stock(db_conn, "INE000000002", "DEVCO", "Devco", source="dev_local")
+    report(db_conn, "stock:ACME", D2, public_ok=True)
+    report(db_conn, "stock:DEVCO", D2, public_ok=True)
+    assert client.get("/api/stocks/ACME").json()["meta"] == {
+        "name": "Acme Widgets Limited", "isin": "INE000000001", "symbol": "ACME", "sector": None, "industry": None}
+    assert client.get("/api/stocks/DEVCO").json()["meta"] is None  # details from an unlicensed source are left out
+
+
+def test_rebase():
+    assert main.rebase([(D1, 50.0), (D2, 55.0)], 50.0) == [{"date": D1, "value": 100.0}, {"date": D2, "value": 110.0}]
+
+
+def test_fund_series_rebased_with_benchmark(client, db_conn):
+    db_conn.execute("INSERT INTO fund_schemes (amfi_code, name, amc, category, plan, option, scheme_type, source) VALUES"
+                    " ('100001', 'Alpha Flexi Cap', 'AMC', 'Equity Scheme - Flexi Cap Fund', 'direct', 'Growth', 'open', %(s)s),"
+                    " ('100002', 'Alpha Index', 'AMC', 'Other Scheme - Index Funds', 'direct', 'Growth', 'open', %(s)s)", {"s": LIC})
+    for code in ("100001", "100002"):
+        for d, v in ((D1, 20.0), (D2, 21.0)):
+            db_conn.execute("INSERT INTO fund_nav (amfi_code, nav_date, nav, source) VALUES (%s, %s, %s, %s)", (code, d, v, LIC))
+    # Flexi Cap -> Nifty 500; its base is the close on or before the fund's first date (23 Oct, a Friday)
+    for d, c in ((date(2026, 10, 23), 20000.0), (D2, 20500.0)):
+        db_conn.execute("INSERT INTO index_prices (index_name, trade_date, close, source) VALUES ('Nifty 500', %s, %s, %s)", (d, c, LIC))
+    body = client.get("/api/funds/100001/series", params={"from": "2026-10-01", "to": "2026-10-27"}).json()
+    assert [(p["date"], p["value"]) for p in body["fund"]] == [(str(D1), 100.0), (str(D2), 105.0)]
+    assert body["benchmark"]["name"] == "Nifty 500" and "not total return" in body["benchmark"]["label"]
+    assert [(p["date"], p["value"]) for p in body["benchmark"]["points"]] == [(str(D2), 102.5)]
+    assert client.get("/api/funds/100002/series", params={"from": "2026-10-01"}).json()["benchmark"] is None  # unmapped category
+    assert client.get("/api/funds/100001/series", params={"from": "2027-01-01"}).status_code == 404
 
 
 # --- search and home ------------------------------------------------------------------------------------

@@ -21,6 +21,7 @@ from pydantic import BaseModel, Field
 from db import DATABASE_URL
 from services.agents import formulas, registry
 from services.agents.desks.funds import mf1_xray
+from services.agents.desks.funds.categories import BENCHMARK, sebi_category
 from services.agents.mother import orchestrator, planner
 from services.agents.runlog import is_public
 from services.api.auth import current_user
@@ -153,6 +154,13 @@ def home(conn: Conn) -> dict:
     }
 
 
+META_SQL = {
+    "stock": "SELECT name, isin, nse_symbol, sector, industry FROM securities m WHERE (nse_symbol = %(k)s OR isin = %(k)s) AND {}",
+    "fund": "SELECT name, amc, category, plan, option FROM fund_schemes m WHERE amfi_code = %(k)s AND {}",
+}
+META_COLS = {"stock": ("name", "isin", "symbol", "sector", "industry"), "fund": ("name", "amc", "category", "plan", "option")}
+
+
 def _page(conn, kind: str, key: str, response: Response) -> dict:
     row = conn.execute("SELECT as_of, public_ok, report FROM reports WHERE subject = %s AND status = 'published'"
                        " ORDER BY as_of DESC LIMIT 1", (f"{kind}:{key}",)).fetchone()
@@ -170,7 +178,9 @@ def _page(conn, kind: str, key: str, response: Response) -> dict:
             agents[agent_id] = {"available": False, "reason": NOT_LICENSED}
         else:
             agents[agent_id] = {"available": True, "envelope": with_formulas(out[0])}
-    return {"dev_only": dev_only, "subject": key, "as_of": as_of, "report": report, "agents": agents}
+    meta = conn.execute(META_SQL[kind].format(visible_sql("m")), {"k": key}).fetchone()
+    return {"dev_only": dev_only, "subject": key, "as_of": as_of, "report": report, "agents": agents,
+            "meta": dict(zip(META_COLS[kind], meta)) if meta else None}
 
 
 def _stock_key(conn, symbol: str) -> str:
@@ -209,13 +219,42 @@ def stock_prices(conn: Conn, symbol: str, response: Response, start: Annotated[d
 
 
 @app.get("/api/funds/{code}")
-def fund_page(conn: Conn, code: str, response: Response, start: Annotated[date | None, Query(alias="from")] = None) -> dict:
+def fund_page(conn: Conn, code: str, response: Response) -> dict:
+    return _page(conn, "fund", _fund_key(conn, code), response)
+
+
+def rebase(points: list[tuple[date, float]], base: float) -> list[dict]:
+    """Each value as an index of `base` = 100 (100 x value / base)."""
+    return [{"date": d, "value": 100 * v / base} for d, v in points]
+
+
+@app.get("/api/funds/{code}/series")
+def fund_series(conn: Conn, code: str, response: Response, start: Annotated[date, Query(alias="from")],
+                end: Annotated[date | None, Query(alias="to")] = None) -> dict:
+    """The fund's NAV and its category benchmark from `from` to `to`, both rebased to 100 on the fund's first NAV date
+    in the range (the benchmark at its latest close on or before that date). The benchmark is a price index, not TRI."""
     key = _fund_key(conn, code)
-    page = _page(conn, "fund", key, response)
-    navs = conn.execute(f"SELECT nav_date, nav FROM fund_nav n WHERE amfi_code = %s AND nav_date >= %s AND {visible_sql('n')}"
-                        " ORDER BY nav_date", (key, start or date.today() - timedelta(days=5 * 366))).fetchall()
-    page["nav"] = [{"date": d, "nav": float(v)} for d, v in navs]
-    return page
+    end = end or date.today()
+    navs = [(d, float(v)) for d, v in conn.execute(
+        f"SELECT nav_date, nav FROM fund_nav n WHERE amfi_code = %s AND nav_date BETWEEN %s AND %s AND {visible_sql('n')}"
+        " ORDER BY nav_date", (key, start, end))]
+    if not navs:
+        raise HTTPException(404, f"no NAVs for {key} in this range" + ("" if dev_mode() else f" {NOT_LICENSED}"))
+    dev_only = gate(not dev_mode(), response)  # rows were already filtered by licence
+    (raw_category,) = conn.execute("SELECT category FROM fund_schemes WHERE amfi_code = %s", (key,)).fetchone()
+    bench_name, bench = BENCHMARK.get(sebi_category(raw_category) or ""), None
+    if bench_name:
+        first = navs[0][0]
+        base = conn.execute(f"SELECT close FROM index_prices i WHERE index_name = %s AND trade_date <= %s AND {visible_sql('i')}"
+                            " ORDER BY trade_date DESC LIMIT 1", (bench_name, first)).fetchone()
+        closes = [(d, float(c)) for d, c in conn.execute(
+            f"SELECT trade_date, close FROM index_prices i WHERE index_name = %s AND trade_date BETWEEN %s AND %s"
+            f" AND {visible_sql('i')} ORDER BY trade_date", (bench_name, first, end))]
+        if base and closes:
+            bench = {"name": bench_name, "label": f"{bench_name} (price index, not total return)",
+                     "points": rebase(closes, float(base[0]))}
+    return {"dev_only": dev_only, "subject": key, "fund": rebase(navs, navs[0][1]), "benchmark": bench,
+            "formula": "Each line is 100 x value / value on the first fund NAV date in the range."}
 
 
 # --- on demand ------------------------------------------------------------------------------------------

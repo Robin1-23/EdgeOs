@@ -4,18 +4,18 @@ import { useRouter } from "next/navigation";
 import { useEffect, useId, useState } from "react";
 import type { SearchResult } from "@/lib/types";
 
-type Option = { key: string; label: string; detail: string; href: string | null };
+export type PickedFund = { amfi_code: string; name: string };
+type Option = { key: string; label: string; detail: string; href: string | null; fund?: PickedFund };
 
-function options(r: SearchResult | null): Option[] {
+function options(r: SearchResult | null, pickFunds: boolean): Option[] {
   if (!r) return [];
-  return [
-    ...r.stocks.map((s) => ({ key: `s-${s.isin}`, label: s.symbol, detail: s.name ?? s.isin, href: `/stocks/${encodeURIComponent(s.symbol)}` })),
-    // fund pages arrive in a later step; listed so a search for a fund shows it exists
-    ...r.funds.map((f) => ({ key: `f-${f.amfi_code}`, label: f.name, detail: `Fund · AMFI ${f.amfi_code} · page coming soon`, href: null })),
-  ];
+  const funds = r.funds.map((f) => ({ key: `f-${f.amfi_code}`, label: f.name, detail: `Fund · AMFI ${f.amfi_code}`, href: `/funds/${f.amfi_code}`, fund: f }));
+  if (pickFunds) return funds;
+  return [...r.stocks.map((s) => ({ key: `s-${s.isin}`, label: s.symbol, detail: s.name ?? s.isin, href: `/stocks/${encodeURIComponent(s.symbol)}` })), ...funds];
 }
 
-export function SearchBox() {
+/** Site search. With onPickFund it lists funds only and hands the chosen one back instead of navigating. */
+export function SearchBox({ onPickFund, placeholder }: { onPickFund?: (f: PickedFund) => void; placeholder?: string } = {}) {
   const router = useRouter();
   const listId = useId();
   const [q, setQ] = useState("");
@@ -45,8 +45,15 @@ export function SearchBox() {
     };
   }, [q]);
 
-  const opts = options(result);
-  const go = (o: Option | undefined) => o?.href && router.push(o.href);
+  const opts = options(result, !!onPickFund);
+  const go = (o: Option | undefined) => {
+    if (!o) return;
+    if (onPickFund && o.fund) {
+      onPickFund(o.fund);
+      setQ("");
+      setResult(null);
+    } else if (o.href) router.push(o.href);
+  };
 
   function onKey(e: React.KeyboardEvent) {
     if (e.key === "ArrowDown") {
@@ -78,7 +85,7 @@ export function SearchBox() {
         aria-autocomplete="list"
         aria-activedescendant={active >= 0 && opts[active] ? `${listId}-${active}` : undefined}
         autoComplete="off"
-        placeholder="Search by company, NSE symbol, ISIN or fund name"
+        placeholder={placeholder ?? "Search by company, NSE symbol, ISIN or fund name"}
         value={q}
         onChange={(e) => {
           setQ(e.target.value);

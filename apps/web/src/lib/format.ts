@@ -14,7 +14,7 @@ export function formatValue(value: number | string, unit: string | null): string
     case "INR cr":
       return `${value < 0 ? "−" : ""}₹${grouped(Math.abs(value) >= 100 ? 0 : 1).format(Math.abs(value))} cr`;
     case "ratio":
-      return `${(value * 100).toFixed(1)}%`;
+      return `${value < 0 ? "−" : ""}${Math.abs(value * 100).toFixed(1)}%`;
     case "%":
       return `${value.toFixed(2)}%`;
     case "x":

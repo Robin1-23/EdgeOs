@@ -9,6 +9,9 @@ export const AGENT_TITLES: Record<string, string> = {
   M5: "News and sentiment",
   M6: "Peers and sector",
   M7: "Valuation ranges",
+  MF2: "Returns and consistency",
+  MF1: "Portfolio X-ray",
+  MF3: "Closet-index check",
 };
 
 /** Short labels for citation chips: "M1:close" -> "Close". Unknown ids fall back to the agent title. */

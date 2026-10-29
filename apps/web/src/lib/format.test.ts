@@ -10,6 +10,7 @@ test("formatValue by unit", () => {
   assert.equal(formatValue(-1.3328, "INR"), "−₹1.33");
   assert.equal(formatValue(-1250.4, "INR cr"), "−₹1,250 cr");
   assert.equal(formatValue(0.237, "ratio"), "23.7%");
+  assert.equal(formatValue(-0.068, "ratio"), "−6.8%");
   assert.equal(formatValue(27.274, "x"), "27.3×");
   assert.equal(formatValue(-5.25, "pp"), "−5.3 pp");
   assert.equal(formatValue(2.5, "pp"), "+2.5 pp");

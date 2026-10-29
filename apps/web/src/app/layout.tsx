@@ -21,7 +21,12 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             <Link href="/" className="font-semibold tracking-tight text-lg">
               EdgeOS
             </Link>
-            <span className="text-xs text-muted">Describes, never advises</span>
+            <nav className="flex items-center gap-4 text-sm">
+              <Link href="/tools/overlap" className="text-muted hover:text-foreground">
+                Fund overlap
+              </Link>
+              <span className="hidden text-xs text-muted sm:inline">Describes, never advises</span>
+            </nav>
           </div>
         </header>
         <main className="flex-1 mx-auto w-full max-w-6xl px-4 py-6">{children}</main>
