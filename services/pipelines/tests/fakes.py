@@ -1,7 +1,7 @@
 from datetime import date
 
 from services.pipelines import (
-    amfi_nav, classification, filings, fund_disclosures, fundamentals, governance, nse_bhavcopy, nse_indices,
+    amfi_nav, classification, filings, fund_disclosures, fundamentals, governance, news, nse_bhavcopy, nse_indices,
 )
 
 
@@ -11,8 +11,9 @@ class FakeAdapter:
 
     def __init__(self, name="dev_local", prices=None, indices=None, navs_latest=None, months=None, financials=None,
                  sectors=None, holdings=None, constituents=None, ters=None, shareholding=None, events=None,
-                 filing_records=None):
+                 filing_records=None, news_records=None):
         self.name = name
+        self.news_records = news_records  # raw records for news.build, or None
         self.filing_records = filing_records  # raw records for filings.build, or None
         # isin -> raw shareholding records; isin -> (event records, covered_until)
         self.shareholding_recs, self.events = shareholding or {}, events or {}
@@ -80,3 +81,8 @@ class FakeAdapter:
         if self.filing_records is None:
             return None
         return filings.build([r for r in self.filing_records if r[2].date() >= since])
+
+    def news(self, since: date):
+        if self.news_records is None:
+            return None
+        return news.build([r for r in self.news_records if r[0].date() >= since])

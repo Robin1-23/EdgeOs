@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Protocol
 
 from services.pipelines import (
-    amfi_nav, classification, filings, fund_disclosures, fundamentals, governance, nse_bhavcopy, nse_indices,
+    amfi_nav, classification, filings, fund_disclosures, fundamentals, governance, news, nse_bhavcopy, nse_indices,
 )
 from services.pipelines.common import RAW_DATA_DIR, PipelineError
 
@@ -58,6 +58,9 @@ class SourceAdapter(Protocol):
 
     def filings(self, since: date) -> filings.Parsed | None:
         """Filings (with plain text where available) filed on or after `since`, all companies (filings.build)."""
+
+    def news(self, since: date) -> news.Parsed | None:
+        """Headlines published on or after `since` (news.build): headline, link, publisher, time; no bodies."""
 
 
 class DevLocal:
@@ -130,6 +133,9 @@ class DevLocal:
     def filings(self, since: date) -> filings.Parsed | None:
         return None  # exchange announcement pages: terms forbid automated collection
 
+    def news(self, since: date) -> news.Parsed | None:
+        return None  # needs a licensed news API or publisher feed
+
 
 class LicensedVendor:
     """Stub for a licensed feed (e.g. Accord/ACE, CMOTS, NSE Data & Analytics). Implement each method by mapping
@@ -180,6 +186,9 @@ class LicensedVendor:
 
     def filings(self, since: date) -> filings.Parsed | None:
         self._todo("filings", "filings.build(records) with extracted text")
+
+    def news(self, since: date) -> news.Parsed | None:
+        self._todo("news", "news.build((published_at, publisher, headline, url) records)")
 
 
 ADAPTERS: dict[str, type] = {"dev_local": DevLocal, "licensed_vendor": LicensedVendor}

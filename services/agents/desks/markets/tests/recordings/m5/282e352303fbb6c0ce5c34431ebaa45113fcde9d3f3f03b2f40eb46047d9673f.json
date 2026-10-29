@@ -1,0 +1,18 @@
+{
+  "request": {
+    "model": "gpt-6-luna",
+    "schema_name": "NewsLabels",
+    "effort": "low",
+    "system": "You label news headlines about an Indian listed company. For each numbered headline give: sentiment, the tone of the news for the company's business as reported (positive, neutral or negative; not a view on the share price or on what investors should do), and event_tag, the kind of news. Use only the headline text.",
+    "user": "Company: Acme Widgets\n\n[0] Acme Widgets Q2 profit rises to Rs 22 crore\n[1] ACME shares slip 3% as metal costs rise\n[2] Acme Widgets wins Rs 300 crore defence order\n[3] Auditor quits Acme Widgets citing other assignments\n[4] Acme Widgets names new CFO\n[5] Brokerage upgrades Acme Widgets to buy\n[6] Acme Widgets to expand Pune plant\n[7] Acme Widgets faces GST notice"
+  },
+  "response": {
+    "text": "{\"labels\": [{\"index\": 0, \"sentiment\": \"positive\", \"event_tag\": \"results\"}, {\"index\": 1, \"sentiment\": \"negative\", \"event_tag\": \"market_move\"}, {\"index\": 2, \"sentiment\": \"positive\", \"event_tag\": \"order_win\"}, {\"index\": 3, \"sentiment\": \"negative\", \"event_tag\": \"governance\"}, {\"index\": 4, \"sentiment\": \"neutral\", \"event_tag\": \"management_change\"}, {\"index\": 5, \"sentiment\": \"positive\", \"event_tag\": \"rating_or_broker_action\"}, {\"index\": 6, \"sentiment\": \"positive\", \"event_tag\": \"product_or_expansion\"}, {\"index\": 7, \"sentiment\": \"negative\", \"event_tag\": \"regulatory_or_legal\"}, {\"index\": 99, \"sentiment\": \"negative\", \"event_tag\": \"other\"}]}",
+    "model": "gpt-6-luna",
+    "input_tokens": 91,
+    "cached_tokens": 0,
+    "output_tokens": 220,
+    "reasoning_tokens": 0
+  },
+  "origin": "hand-written test response (not captured from a live model)"
+}
