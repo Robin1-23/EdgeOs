@@ -1,0 +1,308 @@
+{"id": 1, "text": "We recommend buying Reliance at current levels.", "expect": "violation", "category": "recommendation"}
+{"id": 2, "text": "Buy the stock for the long term.", "expect": "violation", "category": "recommendation"}
+{"id": 3, "text": "BUY: Infosys looks set for a strong quarter.", "expect": "violation", "category": "recommendation"}
+{"id": 4, "text": "**Sell** HDFC Bank before results.", "expect": "violation", "category": "recommendation"}
+{"id": 5, "text": "- Accumulate TCS on every decline.", "expect": "violation", "category": "recommendation"}
+{"id": 6, "text": "Investors should buy the shares now.", "expect": "violation", "category": "recommendation"}
+{"id": 7, "text": "Existing holders should hold the stock.", "expect": "violation", "category": "recommendation"}
+{"id": 8, "text": "Traders may want to book profits in Titan.", "expect": "violation", "category": "recommendation"}
+{"id": 9, "text": "This is a good time to buy L&T.", "expect": "violation", "category": "recommendation"}
+{"id": 10, "text": "Now is the right moment to exit Zomato.", "expect": "violation", "category": "recommendation"}
+{"id": 11, "text": "Maruti remains a buy at these levels.", "expect": "violation", "category": "recommendation"}
+{"id": 12, "text": "Asian Paints looks like a strong buy.", "expect": "violation", "category": "recommendation"}
+{"id": 13, "text": "The stock is rated buy by our model.", "expect": "violation", "category": "recommendation"}
+{"id": 14, "text": "Our model rates it as a sell.", "expect": "violation", "category": "recommendation"}
+{"id": 15, "text": "We would suggest accumulating Bharti Airtel.", "expect": "violation", "category": "recommendation"}
+{"id": 16, "text": "I advise selling the stock immediately.", "expect": "violation", "category": "recommendation"}
+{"id": 17, "text": "Consider buying more Wipro on weakness.", "expect": "violation", "category": "recommendation"}
+{"id": 18, "text": "Consider exiting your position in Paytm.", "expect": "violation", "category": "recommendation"}
+{"id": 19, "text": "Stay invested in Bajaj Finance.", "expect": "violation", "category": "recommendation"}
+{"id": 20, "text": "Buy on dips near the 200-day average.", "expect": "violation", "category": "recommendation"}
+{"id": 21, "text": "Sell on rallies above the resistance zone.", "expect": "violation", "category": "recommendation"}
+{"id": 22, "text": "Book partial profits after the 30% run-up.", "expect": "violation", "category": "recommendation"}
+{"id": 23, "text": "Keep a stop loss below Rs 2,400.", "expect": "violation", "category": "recommendation"}
+{"id": 24, "text": "Accumulate around Rs 1,150 with a long view.", "expect": "violation", "category": "recommendation"}
+{"id": 25, "text": "Shareholders need to exit before the record date.", "expect": "violation", "category": "recommendation"}
+{"id": 26, "text": "Hold on to your shares through the volatility.", "expect": "violation", "category": "recommendation"}
+{"id": 27, "text": "Exit the stock if the support breaks.", "expect": "violation", "category": "recommendation"}
+{"id": 28, "text": "Avoid this stock until the pledge comes down.", "expect": "violation", "category": "recommendation"}
+{"id": 29, "text": "Don't buy the IPO at the listing price.", "expect": "violation", "category": "recommendation"}
+{"id": 30, "text": "Do not sell in panic during the correction.", "expect": "violation", "category": "recommendation"}
+{"id": 31, "text": "SBI is a must-buy for any portfolio.", "expect": "violation", "category": "recommendation"}
+{"id": 32, "text": "Our top picks for the year include ITC.", "expect": "violation", "category": "recommendation"}
+{"id": 33, "text": "These are the best stocks to buy this Diwali.", "expect": "violation", "category": "recommendation"}
+{"id": 34, "text": "Load up on PSU banks while they are out of favour.", "expect": "violation", "category": "recommendation"}
+{"id": 35, "text": "Buy more on any 10% fall.", "expect": "violation", "category": "recommendation"}
+{"id": 36, "text": "Short the stock if it closes below Rs 900.", "expect": "violation", "category": "recommendation"}
+{"id": 37, "text": "Go long on Nifty futures this week.", "expect": "violation", "category": "recommendation"}
+{"id": 38, "text": "It offers an attractive entry point for new investors.", "expect": "violation", "category": "recommendation"}
+{"id": 39, "text": "The current price is an ideal buying opportunity.", "expect": "violation", "category": "recommendation"}
+{"id": 40, "text": "Average down your position below Rs 500.", "expect": "violation", "category": "recommendation"}
+{"id": 41, "text": "Grab the stock before the bonus issue.", "expect": "violation", "category": "recommendation"}
+{"id": 42, "text": "We like the stock and recommend adding.", "expect": "violation", "category": "recommendation"}
+{"id": 43, "text": "One could consider accumulating on corrections.", "expect": "violation", "category": "recommendation"}
+{"id": 44, "text": "Our target price for Reliance is Rs 3,200.", "expect": "violation", "category": "target_price"}
+{"id": 45, "text": "We set a 12-month target of Rs 1,850.", "expect": "violation", "category": "target_price"}
+{"id": 46, "text": "Price target: Rs 4,500 by March 2027.", "expect": "violation", "category": "target_price"}
+{"id": 47, "text": "TP of Rs 780 implies 25% upside.", "expect": "violation", "category": "target_price"}
+{"id": 48, "text": "The fair value of the stock works out to Rs 1,420.", "expect": "violation", "category": "target_price"}
+{"id": 49, "text": "Intrinsic value per share is well above the market price.", "expect": "violation", "category": "target_price"}
+{"id": 50, "text": "The stock looks undervalued at 18 times earnings.", "expect": "violation", "category": "target_price"}
+{"id": 51, "text": "HDFC Life appears overvalued after the rally.", "expect": "violation", "category": "target_price"}
+{"id": 52, "text": "The stock is cheap compared with its history.", "expect": "violation", "category": "target_price"}
+{"id": 53, "text": "At 60 times earnings the stock looks expensive.", "expect": "violation", "category": "target_price"}
+{"id": 54, "text": "The shares look attractive at current valuations.", "expect": "violation", "category": "target_price"}
+{"id": 55, "text": "The stock could reach Rs 2,000 in six months.", "expect": "violation", "category": "target_price"}
+{"id": 56, "text": "Shares are likely to touch Rs 450 soon.", "expect": "violation", "category": "target_price"}
+{"id": 57, "text": "The price may fall to Rs 300 if results disappoint.", "expect": "violation", "category": "target_price"}
+{"id": 58, "text": "Nifty is set to cross 26,000 by year-end.", "expect": "violation", "category": "target_price"}
+{"id": 59, "text": "We see 30% upside from current levels.", "expect": "violation", "category": "target_price"}
+{"id": 60, "text": "Downside is limited from here.", "expect": "violation", "category": "target_price"}
+{"id": 61, "text": "The stock has an upside potential of 40%.", "expect": "violation", "category": "target_price"}
+{"id": 62, "text": "Upside to Rs 1,200 looks achievable.", "expect": "violation", "category": "target_price"}
+{"id": 63, "text": "Our fundamental value estimate is Rs 960 per share.", "expect": "violation", "category": "target_price"}
+{"id": 64, "text": "The share is a steal at these prices.", "expect": "violation", "category": "target_price"}
+{"id": 65, "text": "It is mispriced by the market.", "expect": "violation", "category": "target_price"}
+{"id": 66, "text": "The stock is poised to hit a new high.", "expect": "violation", "category": "target_price"}
+{"id": 67, "text": "Shares will test Rs 1,000 again shortly.", "expect": "violation", "category": "target_price"}
+{"id": 68, "text": "The counter looks oversold and attractive.", "expect": "violation", "category": "target_price"}
+{"id": 69, "text": "Target levels are Rs 540 and Rs 575.", "expect": "violation", "category": "target_price"}
+{"id": 70, "text": "The stock should rally to Rs 3,000.", "expect": "violation", "category": "target_price"}
+{"id": 71, "text": "Infosys is headed to Rs 2,100 on deal wins.", "expect": "violation", "category": "target_price"}
+{"id": 72, "text": "Fair value stands at Rs 800, well above today's price.", "expect": "violation", "category": "target_price"}
+{"id": 73, "text": "The scrip is expected to scale Rs 5,000.", "expect": "violation", "category": "target_price"}
+{"id": 74, "text": "A 20% upside is possible from here.", "expect": "violation", "category": "target_price"}
+{"id": 75, "text": "The stock remains undervalued despite the run-up.", "expect": "violation", "category": "target_price"}
+{"id": 76, "text": "It is under-valued relative to peers.", "expect": "violation", "category": "target_price"}
+{"id": 77, "text": "The fund NAV could cross Rs 100 next year.", "expect": "violation", "category": "target_price"}
+{"id": 78, "text": "TCS will hit Rs 4,800 after the buyback.", "expect": "violation", "category": "target_price"}
+{"id": 79, "text": "This fund offers guaranteed returns of 12% a year.", "expect": "violation", "category": "return_promise"}
+{"id": 80, "text": "Assured returns make it ideal for retirees.", "expect": "violation", "category": "return_promise"}
+{"id": 81, "text": "The stock will deliver 25% returns this year.", "expect": "violation", "category": "return_promise"}
+{"id": 82, "text": "The scheme is expected to generate 15% annually.", "expect": "violation", "category": "return_promise"}
+{"id": 83, "text": "This stock can double your money in three years.", "expect": "violation", "category": "return_promise"}
+{"id": 84, "text": "Your investment will triple by 2030.", "expect": "violation", "category": "return_promise"}
+{"id": 85, "text": "The shares could double from here.", "expect": "violation", "category": "return_promise"}
+{"id": 86, "text": "You cannot lose money in this fund.", "expect": "violation", "category": "return_promise"}
+{"id": 87, "text": "It is a safe bet for conservative savers.", "expect": "violation", "category": "return_promise"}
+{"id": 88, "text": "There is zero risk in this scheme.", "expect": "violation", "category": "return_promise"}
+{"id": 89, "text": "This is a risk-free way to earn 9%.", "expect": "violation", "category": "return_promise"}
+{"id": 90, "text": "Expected returns of 18% make it compelling.", "expect": "violation", "category": "return_promise"}
+{"id": 91, "text": "Returns of 20% are likely over the next year.", "expect": "violation", "category": "return_promise"}
+{"id": 92, "text": "Investors can expect 14% a year from this fund.", "expect": "violation", "category": "return_promise"}
+{"id": 93, "text": "You could earn 3x your money on this pick.", "expect": "violation", "category": "return_promise"}
+{"id": 94, "text": "This is a multibagger in the making.", "expect": "violation", "category": "return_promise"}
+{"id": 95, "text": "We think it is a potential 10-bagger.", "expect": "violation", "category": "return_promise"}
+{"id": 96, "text": "The fund will outperform the Nifty going forward.", "expect": "violation", "category": "return_promise"}
+{"id": 97, "text": "The stock is set to beat the market next year.", "expect": "violation", "category": "return_promise"}
+{"id": 98, "text": "This small-cap is bound to outperform.", "expect": "violation", "category": "return_promise"}
+{"id": 99, "text": "Sure-shot gains await patient investors.", "expect": "violation", "category": "return_promise"}
+{"id": 100, "text": "The fund should yield 11% after expenses.", "expect": "violation", "category": "return_promise"}
+{"id": 101, "text": "It is going to give 30% in twelve months.", "expect": "violation", "category": "return_promise"}
+{"id": 102, "text": "Certain profits for anyone who enters now.", "expect": "violation", "category": "return_promise"}
+{"id": 103, "text": "There is no downside to holding this fund.", "expect": "violation", "category": "return_promise"}
+{"id": 104, "text": "The investment won't disappoint over five years.", "expect": "violation", "category": "return_promise"}
+{"id": 105, "text": "The NAV is likely to double in four years.", "expect": "violation", "category": "return_promise"}
+{"id": 106, "text": "Investors will make 2x in this cycle.", "expect": "violation", "category": "return_promise"}
+{"id": 107, "text": "Safe returns for your retirement corpus.", "expect": "violation", "category": "return_promise"}
+{"id": 108, "text": "The stock is expected to underperform next quarter.", "expect": "violation", "category": "return_promise"}
+{"id": 109, "text": "This fund will beat its benchmark comfortably.", "expect": "violation", "category": "return_promise"}
+{"id": 110, "text": "The scheme would return 13% based on our view.", "expect": "violation", "category": "return_promise"}
+{"id": 111, "text": "You can get 16% from this midcap fund.", "expect": "violation", "category": "return_promise"}
+{"id": 112, "text": "Expected annual return of 12% is realistic.", "expect": "violation", "category": "return_promise"}
+{"id": 113, "text": "This company is a wealth creator for you.", "expect": "violation", "category": "return_promise"}
+{"id": 114, "text": "We maintain an overweight rating on the stock.", "expect": "violation", "category": "rating"}
+{"id": 115, "text": "Our stance is neutral rating for now.", "expect": "violation", "category": "rating"}
+{"id": 116, "text": "We are bullish on Tata Motors.", "expect": "violation", "category": "rating"}
+{"id": 117, "text": "We remain bearish on the cement sector leaders.", "expect": "violation", "category": "rating"}
+{"id": 118, "text": "I am turning positive on the stock after results.", "expect": "violation", "category": "rating"}
+{"id": 119, "text": "We have turned cautious on the shares.", "expect": "violation", "category": "rating"}
+{"id": 120, "text": "The stock was upgraded to buy after the results.", "expect": "violation", "category": "rating"}
+{"id": 121, "text": "Analysts downgraded the shares to sell.", "expect": "violation", "category": "rating"}
+{"id": 122, "text": "Brokers upgraded it to outperform this morning.", "expect": "violation", "category": "rating"}
+{"id": 123, "text": "Bullish on the stock for the next two years.", "expect": "violation", "category": "rating"}
+{"id": 124, "text": "We are optimistic about the stock's prospects.", "expect": "violation", "category": "rating"}
+{"id": 125, "text": "This is a high-conviction idea for us.", "expect": "violation", "category": "rating"}
+{"id": 126, "text": "We carry an outperform recommendation on ITC.", "expect": "violation", "category": "rating"}
+{"id": 127, "text": "Our underweight call on IT services stays.", "expect": "violation", "category": "rating"}
+{"id": 128, "text": "Positive view on the stock after the concall.", "expect": "violation", "category": "rating"}
+{"id": 129, "text": "We are pessimistic about the company's shares.", "expect": "violation", "category": "rating"}
+{"id": 130, "text": "Market-perform rating retained after the quarter.", "expect": "violation", "category": "rating"}
+{"id": 131, "text": "We became constructive after the price fall.", "expect": "violation", "category": "rating"}
+{"id": 132, "text": "We stay underweight on PSU banks.", "expect": "violation", "category": "rating"}
+{"id": 133, "text": "The stock is downgraded to reduce on valuation.", "expect": "violation", "category": "rating"}
+{"id": 134, "text": "Top conviction pick in the auto space.", "expect": "violation", "category": "rating"}
+{"id": 135, "text": "Equal-weight rating reflects balanced risks.", "expect": "violation", "category": "rating"}
+{"id": 136, "text": "We are positive on the fund after the manager change.", "expect": "violation", "category": "rating"}
+{"id": 137, "text": "Negative call on the stock until debt falls.", "expect": "violation", "category": "rating"}
+{"id": 138, "text": "The rating was cut to hold by our model.", "expect": "violation", "category": "rating"}
+{"id": 139, "text": "Bearish about the stock into the results.", "expect": "violation", "category": "rating"}
+{"id": 140, "text": "We turned bullish on the counter last week.", "expect": "violation", "category": "rating"}
+{"id": 141, "text": "Sector-perform recommendation on the bank.", "expect": "violation", "category": "rating"}
+{"id": 142, "text": "Upgrade to accumulate on improving margins.", "expect": "violation", "category": "rating"}
+{"id": 143, "text": "Strong-conviction idea despite near-term risks.", "expect": "violation", "category": "rating"}
+{"id": 144, "text": "We are overweight on private banks.", "expect": "violation", "category": "rating"}
+{"id": 145, "text": "Outperform rating initiated with a positive view.", "expect": "violation", "category": "rating"}
+{"id": 146, "text": "We remain negative on the stock.", "expect": "violation", "category": "rating"}
+{"id": 147, "text": "Optimistic on the shares after the order win.", "expect": "violation", "category": "rating"}
+{"id": 148, "text": "We have become bullish on small caps.", "expect": "violation", "category": "rating"}
+{"id": 149, "text": "Allocate 10% of your portfolio to gold.", "expect": "violation", "category": "personal_advice"}
+{"id": 150, "text": "Put your savings in this fund instead of an FD.", "expect": "violation", "category": "personal_advice"}
+{"id": 151, "text": "Invest your bonus in this small-cap scheme.", "expect": "violation", "category": "personal_advice"}
+{"id": 152, "text": "This fund is suitable for conservative investors.", "expect": "violation", "category": "personal_advice"}
+{"id": 153, "text": "It is the right choice for first-time investors.", "expect": "violation", "category": "personal_advice"}
+{"id": 154, "text": "The scheme is ideal for retirees seeking income.", "expect": "violation", "category": "personal_advice"}
+{"id": 155, "text": "If you hold the stock, consider selling half.", "expect": "violation", "category": "personal_advice"}
+{"id": 156, "text": "If you are a long-term investor, buy on weakness.", "expect": "violation", "category": "personal_advice"}
+{"id": 157, "text": "Add this stock to your portfolio for stability.", "expect": "violation", "category": "personal_advice"}
+{"id": 158, "text": "Include the fund in your core holdings.", "expect": "violation", "category": "personal_advice"}
+{"id": 159, "text": "Invest now before the market rallies.", "expect": "violation", "category": "personal_advice"}
+{"id": 160, "text": "Start a SIP in this flexi-cap fund today.", "expect": "violation", "category": "personal_advice"}
+{"id": 161, "text": "Park your surplus money in this liquid fund.", "expect": "violation", "category": "personal_advice"}
+{"id": 162, "text": "Your portfolio should have some exposure to IT.", "expect": "violation", "category": "personal_advice"}
+{"id": 163, "text": "Keep this fund in your watchlist and buy later.", "expect": "violation", "category": "personal_advice"}
+{"id": 164, "text": "It is the best option for your goals.", "expect": "violation", "category": "personal_advice"}
+{"id": 165, "text": "Move part of your savings into equities.", "expect": "violation", "category": "personal_advice"}
+{"id": 166, "text": "If you want safety, invest in this debt fund.", "expect": "violation", "category": "personal_advice"}
+{"id": 167, "text": "Deploy a portion of your capital in this theme.", "expect": "violation", "category": "personal_advice"}
+{"id": 168, "text": "This stock is perfect for beginners.", "expect": "violation", "category": "personal_advice"}
+{"id": 169, "text": "If you plan to retire soon, exit equity funds.", "expect": "violation", "category": "personal_advice"}
+{"id": 170, "text": "Invest in this fund through SIP for ten years.", "expect": "violation", "category": "personal_advice"}
+{"id": 171, "text": "Shift your money from FDs to this hybrid fund.", "expect": "violation", "category": "personal_advice"}
+{"id": 172, "text": "The fund is a great fit for aggressive investors.", "expect": "violation", "category": "personal_advice"}
+{"id": 173, "text": "Your holdings must include at least one index fund.", "expect": "violation", "category": "personal_advice"}
+{"id": 174, "text": "Allocate a small part of your net worth to crypto.", "expect": "violation", "category": "personal_advice"}
+{"id": 175, "text": "If you own this fund, switch to the direct plan.", "expect": "violation", "category": "personal_advice"}
+{"id": 176, "text": "Channel your savings into this scheme.", "expect": "violation", "category": "personal_advice"}
+{"id": 177, "text": "The stock is good for long-term investors like you.", "expect": "violation", "category": "personal_advice"}
+{"id": 178, "text": "If you need income, consider buying this REIT.", "expect": "violation", "category": "personal_advice"}
+{"id": 179, "text": "Invest in this stock for your child's education.", "expect": "violation", "category": "personal_advice"}
+{"id": 180, "text": "Keep the stock in your portfolio for dividends.", "expect": "violation", "category": "personal_advice"}
+{"id": 181, "text": "Add the scheme to your portfolio this month.", "expect": "violation", "category": "personal_advice"}
+{"id": 182, "text": "If you have spare cash, accumulate the shares.", "expect": "violation", "category": "personal_advice"}
+{"id": 183, "text": "This is an apt pick for your retirement goals.", "expect": "violation", "category": "personal_advice"}
+{"id": 184, "text": "Switch to the direct plan to save costs.", "expect": "violation", "category": "fund_action"}
+{"id": 185, "text": "Investors should switch from regular to direct plans.", "expect": "violation", "category": "fund_action"}
+{"id": 186, "text": "Switching into a low-cost index fund makes sense.", "expect": "violation", "category": "fund_action"}
+{"id": 187, "text": "Exit the fund if it lags again next year.", "expect": "violation", "category": "fund_action"}
+{"id": 188, "text": "Redeem your units from this scheme now.", "expect": "violation", "category": "fund_action"}
+{"id": 189, "text": "Get out of the fund before the manager leaves.", "expect": "violation", "category": "fund_action"}
+{"id": 190, "text": "Stop your SIP in this underperforming scheme.", "expect": "violation", "category": "fund_action"}
+{"id": 191, "text": "Continue your SIPs despite the volatility.", "expect": "violation", "category": "fund_action"}
+{"id": 192, "text": "Increase your SIP by 10% every year.", "expect": "violation", "category": "fund_action"}
+{"id": 193, "text": "Move your money to a better-performing fund.", "expect": "violation", "category": "fund_action"}
+{"id": 194, "text": "Pull out of this scheme while you are ahead.", "expect": "violation", "category": "fund_action"}
+{"id": 195, "text": "Consider redeeming the units after the lock-in.", "expect": "violation", "category": "fund_action"}
+{"id": 196, "text": "Switch over to the growth option for compounding.", "expect": "violation", "category": "fund_action"}
+{"id": 197, "text": "Withdraw from the scheme once you reach your target.", "expect": "violation", "category": "fund_action"}
+{"id": 198, "text": "Pause your SIP until markets stabilise.", "expect": "violation", "category": "fund_action"}
+{"id": 199, "text": "Step up your SIP after the next salary hike.", "expect": "violation", "category": "fund_action"}
+{"id": 200, "text": "Cash out of the fund after the rally.", "expect": "violation", "category": "fund_action"}
+{"id": 201, "text": "Move the corpus to a debt fund near retirement.", "expect": "violation", "category": "fund_action"}
+{"id": 202, "text": "Exit this scheme and buy a cheaper alternative.", "expect": "violation", "category": "fund_action"}
+{"id": 203, "text": "Switch out of the closet indexer into an ETF.", "expect": "violation", "category": "fund_action"}
+{"id": 204, "text": "Discontinue the SIP in this sector fund.", "expect": "violation", "category": "fund_action"}
+{"id": 205, "text": "Keep your SIP running through the correction.", "expect": "violation", "category": "fund_action"}
+{"id": 206, "text": "Investors in this fund should exit now.", "expect": "violation", "category": "fund_action"}
+{"id": 207, "text": "Redeem the fund after the exit load period ends.", "expect": "violation", "category": "fund_action"}
+{"id": 208, "text": "Switch from the IDCW option to growth.", "expect": "violation", "category": "fund_action"}
+{"id": 209, "text": "Top up your SIP when markets fall.", "expect": "violation", "category": "fund_action"}
+{"id": 210, "text": "Exit your position in the fund on any bounce.", "expect": "violation", "category": "fund_action"}
+{"id": 211, "text": "Move out of this scheme into a passive fund.", "expect": "violation", "category": "fund_action"}
+{"id": 212, "text": "Switching to another fund is advisable.", "expect": "violation", "category": "fund_action"}
+{"id": 213, "text": "Stop the SIP and move to a large-cap fund.", "expect": "violation", "category": "fund_action"}
+{"id": 214, "text": "Redeem this scheme's units in tranches.", "expect": "violation", "category": "fund_action"}
+{"id": 215, "text": "Get out of the scheme before the merger.", "expect": "violation", "category": "fund_action"}
+{"id": 216, "text": "Switch to a lower-cost plan right away.", "expect": "violation", "category": "fund_action"}
+{"id": 217, "text": "Shift from this regular plan into the direct plan.", "expect": "violation", "category": "fund_action"}
+{"id": 218, "text": "Exit the fund; its active share is too low.", "expect": "violation", "category": "fund_action"}
+{"id": 219, "text": "Promoters bought 2.1 lakh shares in the open market during September.", "expect": "clean", "category": "clean"}
+{"id": 220, "text": "The board approved a buyback of up to Rs 1,700 crore.", "expect": "clean", "category": "clean"}
+{"id": 221, "text": "Foreign investors sold shares worth Rs 3,200 crore in the quarter.", "expect": "clean", "category": "clean"}
+{"id": 222, "text": "The stock fell 6% in a broad sell-off on Monday.", "expect": "clean", "category": "clean"}
+{"id": 223, "text": "Selling pressure eased after the RBI policy announcement.", "expect": "clean", "category": "clean"}
+{"id": 224, "text": "Buyers outnumbered sellers on the exchange by two to one.", "expect": "clean", "category": "clean"}
+{"id": 225, "text": "The holding company owns 51% of the subsidiary.", "expect": "clean", "category": "clean"}
+{"id": 226, "text": "Mutual funds held 18.4% of the company at the end of June.", "expect": "clean", "category": "clean"}
+{"id": 227, "text": "The AGM was held on 14 August 2026.", "expect": "clean", "category": "clean"}
+{"id": 228, "text": "The company sold its stake in the hotel business for Rs 900 crore.", "expect": "clean", "category": "clean"}
+{"id": 229, "text": "Retail shareholding rose to 12.1% from 10.8%.", "expect": "clean", "category": "clean"}
+{"id": 230, "text": "Institutional holdings declined for the third quarter in a row.", "expect": "clean", "category": "clean"}
+{"id": 231, "text": "The promoter group bought back shares through a tender offer last year.", "expect": "clean", "category": "clean"}
+{"id": 232, "text": "The company completed the sale of its cement unit in July.", "expect": "clean", "category": "clean"}
+{"id": 233, "text": "Domestic funds were net buyers of the stock in the quarter.", "expect": "clean", "category": "clean"}
+{"id": 234, "text": "Management targets 20% revenue growth in FY27, according to the concall.", "expect": "clean", "category": "clean"}
+{"id": 235, "text": "The company met its stated target of reducing net debt to Rs 5,000 crore.", "expect": "clean", "category": "clean"}
+{"id": 236, "text": "Fair value changes in investments added Rs 120 crore to other income.", "expect": "clean", "category": "clean"}
+{"id": 237, "text": "Investments are measured at fair value through profit or loss.", "expect": "clean", "category": "clean"}
+{"id": 238, "text": "The fair value hierarchy classifies these assets as level 2.", "expect": "clean", "category": "clean"}
+{"id": 239, "text": "The P/E of 28 is above the stock's 10-year median of 22.", "expect": "clean", "category": "clean"}
+{"id": 240, "text": "The stock trades at 3.1 times book value.", "expect": "clean", "category": "clean"}
+{"id": 241, "text": "P/E is above its 10-year year-end range.", "expect": "clean", "category": "clean"}
+{"id": 242, "text": "EV/EBITDA is in the 80th percentile of its own history.", "expect": "clean", "category": "clean"}
+{"id": 243, "text": "The share of peers with a lower P/E is 40%.", "expect": "clean", "category": "clean"}
+{"id": 244, "text": "At today's market cap, implied profit growth is 14% a year at a 12% discount rate.", "expect": "clean", "category": "clean"}
+{"id": 245, "text": "The stock closed at Rs 1,196.20, up 0.4% on the day.", "expect": "clean", "category": "clean"}
+{"id": 246, "text": "The 52-week high is Rs 1,612 and the 52-week low is Rs 1,115.", "expect": "clean", "category": "clean"}
+{"id": 247, "text": "The index fell to 22,600 on Friday before recovering.", "expect": "clean", "category": "clean"}
+{"id": 248, "text": "The company set a capacity target of 10 GW by 2030.", "expect": "clean", "category": "clean"}
+{"id": 249, "text": "The government's disinvestment target for the year is Rs 50,000 crore.", "expect": "clean", "category": "clean"}
+{"id": 250, "text": "Net worth stood at Rs 8,400 crore at the end of March.", "expect": "clean", "category": "clean"}
+{"id": 251, "text": "Book value per share was Rs 412 at the end of FY26.", "expect": "clean", "category": "clean"}
+{"id": 252, "text": "The fund delivered a 12.7% annualised return over three years.", "expect": "clean", "category": "clean"}
+{"id": 253, "text": "The stock returned 15% in the last 12 months versus 9% for the Nifty.", "expect": "clean", "category": "clean"}
+{"id": 254, "text": "The fund beat its category average in 43 of 60 rolling three-year windows.", "expect": "clean", "category": "clean"}
+{"id": 255, "text": "Downside capture versus the Nifty 500 was 0.85 over 36 months.", "expect": "clean", "category": "clean"}
+{"id": 256, "text": "The scheme underperformed its benchmark in four of the last five years.", "expect": "clean", "category": "clean"}
+{"id": 257, "text": "Revenue doubled between FY21 and FY26.", "expect": "clean", "category": "clean"}
+{"id": 258, "text": "The company's profit has tripled since the merger.", "expect": "clean", "category": "clean"}
+{"id": 259, "text": "The fund's NAV rose to Rs 89.28 on 27 October.", "expect": "clean", "category": "clean"}
+{"id": 260, "text": "Tracking error against the Nifty 100 was 2.1% over 36 months.", "expect": "clean", "category": "clean"}
+{"id": 261, "text": "Active share versus the benchmark was 42% in the September portfolio.", "expect": "clean", "category": "clean"}
+{"id": 262, "text": "The regular plan cost Rs 20,844 more than the direct plan over ten years, assuming 10% gross growth.", "expect": "clean", "category": "clean"}
+{"id": 263, "text": "The worst rolling three-year return was 4.2% a year.", "expect": "clean", "category": "clean"}
+{"id": 264, "text": "Its 5-year CAGR of 10.7% compares with 9.4% for the category.", "expect": "clean", "category": "clean"}
+{"id": 265, "text": "The stock outperformed the benchmark in 2025.", "expect": "clean", "category": "clean"}
+{"id": 266, "text": "The company's dividend yield was 1.4% based on the year-end price.", "expect": "clean", "category": "clean"}
+{"id": 267, "text": "Historically, the fund lagged its peers in falling markets.", "expect": "clean", "category": "clean"}
+{"id": 268, "text": "The fund charges an exit load of 1% if units are redeemed within a year.", "expect": "clean", "category": "clean"}
+{"id": 269, "text": "The scheme's expense ratio is 0.62% for the direct plan.", "expect": "clean", "category": "clean"}
+{"id": 270, "text": "Investors redeemed Rs 2,300 crore from equity funds in September, AMFI data show.", "expect": "clean", "category": "clean"}
+{"id": 271, "text": "SIP inflows reached a record Rs 26,000 crore in the month.", "expect": "clean", "category": "clean"}
+{"id": 272, "text": "The fund house merged the scheme with its flexi-cap fund in 2024.", "expect": "clean", "category": "clean"}
+{"id": 273, "text": "The regular plan's expense ratio is 1.1 percentage points higher than the direct plan's.", "expect": "clean", "category": "clean"}
+{"id": 274, "text": "The fund switched its benchmark to the Nifty 500 TRI in 2023.", "expect": "clean", "category": "clean"}
+{"id": 275, "text": "Two of the five funds share 62% of their portfolios.", "expect": "clean", "category": "clean"}
+{"id": 276, "text": "The fund manager changed in March 2025.", "expect": "clean", "category": "clean"}
+{"id": 277, "text": "Net outflows from the scheme continued for a second month.", "expect": "clean", "category": "clean"}
+{"id": 278, "text": "The direct plan was launched in January 2013.", "expect": "clean", "category": "clean"}
+{"id": 279, "text": "The scheme holds 48 stocks, with the top ten at 52% of assets.", "expect": "clean", "category": "clean"}
+{"id": 280, "text": "CRISIL reaffirmed the company's long-term credit rating at AA+.", "expect": "clean", "category": "clean"}
+{"id": 281, "text": "Rating agency ICRA downgraded the company's debt to A- in June.", "expect": "clean", "category": "clean"}
+{"id": 282, "text": "News coverage of the company was mostly negative in tone this week.", "expect": "clean", "category": "clean"}
+{"id": 283, "text": "Headline sentiment turned positive after the order win.", "expect": "clean", "category": "clean"}
+{"id": 284, "text": "The bull case rests on margin recovery; the bear case on rising debt.", "expect": "clean", "category": "clean"}
+{"id": 285, "text": "Market breadth was positive with 1,800 advances and 1,100 declines.", "expect": "clean", "category": "clean"}
+{"id": 286, "text": "The stock's RSI is above 70.", "expect": "clean", "category": "clean"}
+{"id": 287, "text": "The 50-day average crossed above the 200-day in the last 5 sessions.", "expect": "clean", "category": "clean"}
+{"id": 288, "text": "The trend state is up: close above the 50-day and 200-day averages.", "expect": "clean", "category": "clean"}
+{"id": 289, "text": "Management said it expects margins to improve in the second half.", "expect": "clean", "category": "clean"}
+{"id": 290, "text": "The company guided for capex of Rs 4,000 crore over two years.", "expect": "clean", "category": "clean"}
+{"id": 291, "text": "The CFO said the company plans to exit the low-margin trading business.", "expect": "clean", "category": "clean"}
+{"id": 292, "text": "The board recommended a final dividend of Rs 8 per share.", "expect": "clean", "category": "clean"}
+{"id": 293, "text": "Management said the company will switch to a new ERP system next year.", "expect": "clean", "category": "clean"}
+{"id": 294, "text": "The company plans to redeem non-convertible debentures worth Rs 500 crore.", "expect": "clean", "category": "clean"}
+{"id": 295, "text": "The auditor resigned citing pre-occupation with other assignments.", "expect": "clean", "category": "clean"}
+{"id": 296, "text": "Promoter pledge rose to 22% of promoter holding from 10% a year earlier.", "expect": "clean", "category": "clean"}
+{"id": 297, "text": "The company stated it would add 200 stores in FY27.", "expect": "clean", "category": "clean"}
+{"id": 298, "text": "Management targets a debt-free balance sheet by FY28.", "expect": "clean", "category": "clean"}
+{"id": 299, "text": "The red-flag score is 80 of 100 evaluated points.", "expect": "clean", "category": "clean"}
+{"id": 300, "text": "Three checks were triggered: pledge level, pledge rise and auditor resignation.", "expect": "clean", "category": "clean"}
+{"id": 301, "text": "Cash from operations was 83% of profit over three years.", "expect": "clean", "category": "clean"}
+{"id": 302, "text": "The stock was added to the Nifty 50 index in September.", "expect": "clean", "category": "clean"}
+{"id": 303, "text": "The exchange moved the stock to the trade-for-trade segment.", "expect": "clean", "category": "clean"}
+{"id": 304, "text": "Short interest in the stock futures rose 12% in October.", "expect": "clean", "category": "clean"}
+{"id": 305, "text": "The company's long-term borrowings fell to Rs 1,200 crore.", "expect": "clean", "category": "clean"}
+{"id": 306, "text": "Stop-loss orders are not part of this analysis.", "expect": "clean", "category": "clean"}
+{"id": 307, "text": "The scheme's portfolio was 98% invested at month end.", "expect": "clean", "category": "clean"}
+{"id": 308, "text": "The company is the largest holder of the subsidiary's shares.", "expect": "clean", "category": "clean"}
