@@ -217,8 +217,8 @@ def test_openai_provider_error_mapping():
         status(503).complete_json("gpt-6-luna", "s", "u", "Summary", {}, "low")
     no_quota = mocked_provider(lambda req: httpx2.Response(
         429, json={"error": {"message": "You exceeded your current quota", "type": "insufficient_quota", "code": "insufficient_quota"}}))
-    no_credits = mocked_provider(lambda req: httpx2.Response(  # as seen live: no code, only the message
-        429, json={"error": {"message": "You have no credits remaining. Add credits to continue using the API."}}))
+    no_credits = mocked_provider(lambda req: httpx2.Response(  # as seen live
+        429, json={"error": {"message": "Your balance is used up.", "code": "credit_balance_exhausted"}}))
     for p in (no_quota, no_credits):
         with pytest.raises(LLMError, match="insufficient quota") as e:
             p.complete_json("gpt-6-luna", "s", "u", "Summary", {}, "low")

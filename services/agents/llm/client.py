@@ -120,7 +120,7 @@ class OpenAIProvider:
             )
         except openai.RateLimitError as e:
             # an empty account is also a 429, but retrying cannot fix it
-            if e.code == "insufficient_quota" or "no credits" in str(e).lower():
+            if e.code in ("insufficient_quota", "credit_balance_exhausted") or "no credits" in str(e).lower():
                 raise LLMError("openai 429: insufficient quota (no credits)") from e
             raise TransientLLMError(f"{type(e).__name__}: {e}") from e
         except (openai.APITimeoutError, openai.APIConnectionError, openai.InternalServerError) as e:
