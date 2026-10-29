@@ -118,7 +118,12 @@ class OpenAIProvider:
                 model=model, instructions=system, input=user, reasoning={"effort": effort}, store=False,
                 text={"format": {"type": "json_schema", "name": schema_name, "schema": schema, "strict": True}},
             )
-        except (openai.RateLimitError, openai.APITimeoutError, openai.APIConnectionError, openai.InternalServerError) as e:
+        except openai.RateLimitError as e:
+            # an empty account is also a 429, but retrying cannot fix it
+            if e.code == "insufficient_quota" or "no credits" in str(e).lower():
+                raise LLMError("openai 429: insufficient quota (no credits)") from e
+            raise TransientLLMError(f"{type(e).__name__}: {e}") from e
+        except (openai.APITimeoutError, openai.APIConnectionError, openai.InternalServerError) as e:
             raise TransientLLMError(f"{type(e).__name__}: {e}") from e
         except openai.APIStatusError as e:
             raise LLMError(f"openai {e.status_code}: {type(e).__name__}") from e
