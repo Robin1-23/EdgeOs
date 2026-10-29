@@ -1,6 +1,7 @@
-"""Nightly data run: AMFI NAV, then NSE bhavcopy and index catch-up for the last 7 days. Every run is logged to pipeline_runs.
+"""Nightly run: AMFI NAV, then NSE bhavcopy and index catch-up for the last 7 days, then the report batch
+(services/agents/batch.py) over the latest loaded data. Every step is logged to pipeline_runs.
 
-Usage: uv run python -m services.pipelines.nightly [--date YYYY-MM-DD] [--source dev_local]   # --date = "today" in IST
+Usage: uv run python -m services.pipelines.nightly [--date YYYY-MM-DD] [--source dev_local] [--no-reports]   # --date = "today" in IST
 Data comes from one source adapter (services/pipelines/sources.py; DATA_SOURCE env, default dev_local).
 
 Schedule at 00:30 IST, after NSE (~18:00) and AMFI (~23:00) publish. Cron on a UTC server:
@@ -62,9 +63,11 @@ def _run_logged(conn: psycopg.Connection, pipeline: str, target: date, fn: Calla
     return {"pipeline": pipeline, "target_date": target, "status": status, "error": error}
 
 
-def nightly(conn: psycopg.Connection, today: date, adapter) -> list[dict] | None:
-    """Run both pipelines; None if another nightly run is in progress. Use an autocommit connection so
-    log rows commit on their own and a pipeline rollback never erases its log."""
+def nightly(conn: psycopg.Connection, today: date, adapter, reports: Callable[[psycopg.Connection], dict] | None = None
+            ) -> list[dict] | None:
+    """Run the data pipelines, then `reports` (the report batch) if given; None if another nightly run is in
+    progress. Use an autocommit connection so log rows commit on their own and a pipeline rollback never erases its
+    log. The batch reports on the latest loaded dates, so a failed data day leaves nothing new to build."""
     if not conn.execute("SELECT pg_try_advisory_lock(%s)", (LOCK_KEY,)).fetchone()[0]:
         return None
     try:
@@ -72,6 +75,8 @@ def nightly(conn: psycopg.Connection, today: date, adapter) -> list[dict] | None
         for name, mod in (("nse_bhavcopy", nse_bhavcopy), ("nse_indices", nse_indices)):
             for day in days_to_load(conn, name, today):
                 results.append(_run_logged(conn, name, day, lambda d=day, m=mod: m.run_day(conn, d, adapter)))
+        if reports is not None:
+            results.append(_run_logged(conn, "report_batch", today, lambda: reports(conn)))
         return results
     finally:
         conn.execute("SELECT pg_advisory_unlock(%s)", (LOCK_KEY,))
@@ -87,9 +92,11 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--date", type=date.fromisoformat, help="treat this as today (IST)")
     ap.add_argument("--source", choices=sorted(ADAPTERS))
+    ap.add_argument("--no-reports", action="store_true", help="data pipelines only, skip the report batch")
     args = ap.parse_args()
+    from services.agents import batch
     with psycopg.connect(DATABASE_URL, autocommit=True) as conn:
-        results = nightly(conn, args.date or today_ist(), get_adapter(args.source))
+        results = nightly(conn, args.date or today_ist(), get_adapter(args.source), None if args.no_reports else batch.run)
     for r in results or [{"status": "skipped", "error": "another nightly run holds the lock"}]:
         print(r)
     sys.exit(exit_code(results))
