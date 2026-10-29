@@ -23,5 +23,5 @@ def migrate(conn: psycopg.Connection) -> list[str]:
 
 
 if __name__ == "__main__":
-    with psycopg.connect(DATABASE_URL) as conn:
+    with psycopg.connect(DATABASE_URL, connect_timeout=10) as conn:
         print("applied:", migrate(conn) or "nothing new")

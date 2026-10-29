@@ -28,7 +28,9 @@ Do NOT build F&O, You desk, or Family desk yet (Phases 2–4). No live market da
 
 - `apps/web` — Next.js (TypeScript), Tailwind, TradingView charting library, Firebase Auth
 - `services/api` — FastAPI (Python 3.12)
-- `services/agents` — mother agent + desks (Claude Agent SDK or LangGraph), Redis + Celery queue
+- `services/agents` — mother agent + desks, Redis + Celery queue
+- LLM provider: **OpenAI** (Responses API, strict JSON schema output) behind `services/agents/llm/client.py`;
+  agents call only `call_json(tier, ...)` and never import a provider SDK
 - `services/pipelines` — data ingestion jobs (bhavcopy, filings, AMFI)
 - Postgres + TimescaleDB, pgvector for filings/transcripts, object storage for PDFs
 
@@ -52,5 +54,8 @@ docs/SPEC.md
 - Small, reviewable steps: one agent or one pipeline per task, with tests, then commit.
 - Every compute function gets a unit test against a hand-checked known value.
 - Log each agent run to `agent_runs` (agent_id, subject, as_of, status, cost, duration).
-- Secrets in `.env` (never committed). Market data is shown only under its licence terms.
-- Default model: small fast model for specialist interpretation, strong model for planner/judge.
+- Secrets in the repo-root `.env` (gitignored, never committed; `OPENAI_API_KEY` lives there). Market data is shown only under its licence terms.
+- Models: tier `specialist` (small fast model) for specialist interpretation, tier `strong` for planner/judge/debate.
+  Model names and prices live only in `services/agents/llm/config.py`.
+- Tests never call a live LLM: they replay recordings (`LLM_PROVIDER=recorded`); new recordings only via
+  `LLM_PROVIDER=record`, run manually. LLM calls inside `run_logged` are logged to `llm_calls` and costed into `agent_runs`.
