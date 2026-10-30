@@ -74,7 +74,7 @@ export function AccountView() {
         <h1 className="text-3xl font-semibold tracking-tight">Your account</h1>
         {message && <p role="status" className="mt-2">{message}</p>}
         <p className="mt-2 text-muted">Sign in to see your plan, your allowance and your past questions.</p>
-        <button type="button" onClick={openSignIn} className="mt-6 rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-white hover:opacity-90">
+        <button type="button" onClick={openSignIn} className="mt-6 rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-accent-ink hover:opacity-90">
           Sign in
         </button>
       </div>
@@ -143,7 +143,7 @@ export function AccountView() {
       {acct && (
         <>
           <section aria-labelledby="plan-title" className="card p-6">
-            <h2 id="plan-title" className="flex items-center gap-2 font-semibold">Plan <span className={`rounded-full px-2.5 py-0.5 text-xs ${acct.plan === "pro" ? "bg-accent text-white" : "bg-surface-2 text-muted"}`}>{acct.plan === "pro" ? "Pro" : "Free"}</span></h2>
+            <h2 id="plan-title" className="flex items-center gap-2 font-semibold">Plan <span className={`rounded-full px-2.5 py-0.5 text-xs ${acct.plan === "pro" ? "bg-accent text-accent-ink" : "bg-surface-2 text-muted"}`}>{acct.plan === "pro" ? "Pro" : "Free"}</span></h2>
             <div className="mt-4">
               <div className="flex justify-between text-xs text-muted">
                 <span>Questions today</span>
@@ -162,7 +162,7 @@ export function AccountView() {
             <div className="mt-5 flex flex-wrap gap-3">
               {acct.plan === "free" &&
                 (acct.billing_available ? (
-                  <button type="button" disabled={busy} onClick={upgrade} className="rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-40">
+                  <button type="button" disabled={busy} onClick={upgrade} className="rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-accent-ink hover:opacity-90 disabled:opacity-40">
                     Upgrade to Pro, ₹399 a month
                   </button>
                 ) : (

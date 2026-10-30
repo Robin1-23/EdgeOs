@@ -28,18 +28,13 @@ export function Icon({ name, className = "h-4 w-4" }: { name: IconName; classNam
   );
 }
 
-/** The EdgeOS mark: a rising edge inside a rounded square. */
+/** The EdgeOS mark: a rising edge in a lime tile. */
 export function Logo({ className = "h-7 w-7" }: { className?: string }) {
   return (
     <svg viewBox="0 0 32 32" className={className} aria-hidden>
-      <defs>
-        <linearGradient id="edgeos-mark" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#8b9bff" />
-          <stop offset="1" stopColor="#4f5ff0" />
-        </linearGradient>
-      </defs>
-      <rect width="32" height="32" rx="9" fill="url(#edgeos-mark)" />
-      <path d="M8 21.5l5-5 3.5 3.5L24 12" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+      <rect width="32" height="32" rx="8" fill="#c6f135" />
+      <path d="M7.5 21.5l5.2-5.2 3.6 3.6L24.5 11.7" fill="none" stroke="#0b0f02" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="24.5" cy="11.7" r="2.2" fill="#0b0f02" />
     </svg>
   );
 }

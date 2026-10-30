@@ -37,8 +37,8 @@ export function AgentTabs({ ids, agents, extra }: { ids: string[]; agents: Recor
 
   return (
     <section aria-labelledby="detail-title" ref={root} className="space-y-4">
-      <h2 id="detail-title" className="text-lg font-semibold">Evidence</h2>
-      <div role="tablist" aria-label="Evidence by agent" className="-mx-4 flex gap-1 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
+      <h2 id="detail-title" className="text-2xl font-semibold">Evidence <span className="text-muted/80">by agent</span></h2>
+      <div role="tablist" aria-label="Evidence by agent" className="-mx-5 flex gap-1 overflow-x-auto px-5 pb-1 sm:mx-0 sm:w-fit sm:rounded-full sm:border sm:border-line sm:p-1">
         {ids.map((id) => {
           const slot = agents[id];
           const flagged = slot?.available && slot.envelope.flags.some((f) => f.severity !== "info");
@@ -52,7 +52,7 @@ export function AgentTabs({ ids, agents, extra }: { ids: string[]; agents: Recor
               aria-controls={`panel-${id}`}
               onClick={() => setActive(id)}
               className={`relative shrink-0 rounded-full px-4 py-2 text-sm transition-colors ${
-                active === id ? "bg-foreground text-background" : "text-muted hover:bg-surface-2 hover:text-foreground"
+                active === id ? "bg-accent text-accent-ink font-medium" : "text-muted hover:bg-white/[0.05] hover:text-foreground"
               } ${slot?.available ? "" : "opacity-60"}`}
             >
               {SHORT_TITLES[id] ?? id}
@@ -64,7 +64,7 @@ export function AgentTabs({ ids, agents, extra }: { ids: string[]; agents: Recor
       {ids.map((id) => {
         const slot = agents[id];
         return (
-          <div key={id} role="tabpanel" id={`panel-${id}`} aria-labelledby={`tab-${id}`} data-agent={id} hidden={active !== id} className="card p-5">
+          <div key={id} role="tabpanel" id={`panel-${id}`} aria-labelledby={`tab-${id}`} data-agent={id} hidden={active !== id} className="card p-6">
             {!slot ? (
               <p className="text-sm text-muted">Not part of this report.</p>
             ) : slot.available ? (

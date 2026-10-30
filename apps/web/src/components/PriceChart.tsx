@@ -1,6 +1,6 @@
 "use client";
 
-import { CandlestickSeries, ColorType, createChart, HistogramSeries } from "lightweight-charts";
+import { CandlestickSeries, ColorType, createChart, HistogramSeries, LineStyle } from "lightweight-charts";
 import { useEffect, useRef, useState } from "react";
 import { formatDate, monthsBefore } from "@/lib/format";
 import type { Bar } from "@/lib/types";
@@ -41,9 +41,9 @@ export function PriceChart({ symbol, asOf }: { symbol: string; asOf: string }) {
     const chart = createChart(box.current, {
       autoSize: true,
       layout: { background: { type: ColorType.Solid, color: "transparent" }, textColor: css("--muted"), attributionLogo: true },
-      grid: { vertLines: { color: css("--line") }, horzLines: { color: css("--line") } },
-      rightPriceScale: { borderColor: css("--line") },
-      timeScale: { borderColor: css("--line") },
+      grid: { vertLines: { visible: false }, horzLines: { color: "rgba(255,255,255,0.05)", style: LineStyle.Dashed } },
+      rightPriceScale: { borderVisible: false },
+      timeScale: { borderVisible: false },
     });
     const up = css("--up");
     const down = css("--down");
@@ -58,19 +58,19 @@ export function PriceChart({ symbol, asOf }: { symbol: string; asOf: string }) {
   }, [bars]);
 
   return (
-    <section aria-labelledby="chart-title" className="card p-5">
+    <section aria-labelledby="chart-title" className="card p-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h2 id="chart-title" className="font-semibold">
           Price <span className="ml-1 text-xs font-normal text-muted" title="Daily NSE prices, not adjusted for splits or bonuses">NSE · daily · unadjusted</span>
         </h2>
-        <div role="group" aria-label="Chart range" className="flex rounded-full bg-surface-2 p-1">
+        <div role="group" aria-label="Chart range" className="flex rounded-full border border-line p-1">
           {RANGES.map((r) => (
             <button
               key={r.label}
               type="button"
               aria-pressed={months === r.months}
               onClick={() => setMonths(r.months)}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${months === r.months ? "bg-surface text-foreground shadow-sm" : "text-muted hover:text-foreground"}`}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${months === r.months ? "bg-accent text-accent-ink" : "text-muted hover:text-foreground"}`}
             >
               {r.label}
             </button>
@@ -82,7 +82,7 @@ export function PriceChart({ symbol, asOf }: { symbol: string; asOf: string }) {
       ) : bars && bars.length === 0 ? (
         <p className="py-10 text-center text-sm text-muted">No trades in this range up to {formatDate(asOf)}.</p>
       ) : (
-        <div ref={box} className="h-72 w-full" aria-label={`Daily price chart for ${symbol}`} role="img" />
+        <div ref={box} className="h-80 w-full" aria-label={`Daily price chart for ${symbol}`} role="img" />
       )}
     </section>
   );

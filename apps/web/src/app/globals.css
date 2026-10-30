@@ -1,38 +1,22 @@
 @import "tailwindcss";
 
-/* Colour tokens: dark is the primary theme; light follows the system setting. */
+/* One dark theme: near-black, hairline borders, a single lime accent used sparingly. */
 :root {
-  --background: #f7f8fb;
-  --surface: #ffffff;
-  --surface-2: #f1f3f8;
-  --foreground: #0f1524;
-  --muted: #5b6577;
-  --line: #e3e7ef;
-  --accent: #4f5ff0;
-  --accent-soft: #e9ebff;
-  --up: #12805c;
-  --down: #c2343c;
-  --watch: #a15c07;
-  --alert: #c2343c;
-  --glow: rgba(79, 95, 240, 0.12);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #070a12;
-    --surface: #0d121d;
-    --surface-2: #131a28;
-    --foreground: #e9edf5;
-    --muted: #8b95a8;
-    --line: #1c2434;
-    --accent: #8b9bff;
-    --accent-soft: #1a2040;
-    --up: #34d399;
-    --down: #fb7185;
-    --watch: #fbbf24;
-    --alert: #fb7185;
-    --glow: rgba(110, 125, 255, 0.18);
-  }
+  color-scheme: dark;
+  --background: #050605;
+  --surface: #0b0d0b;
+  --surface-2: #131612;
+  --foreground: #f1f4ec;
+  --muted: #8a9286;
+  --line: rgba(255, 255, 255, 0.075);
+  --accent: #c6f135;
+  --accent-ink: #0b0f02;
+  --accent-soft: rgba(198, 241, 53, 0.1);
+  --up: #a3e635;
+  --down: #ff5f6d;
+  --watch: #f5b83d;
+  --alert: #ff5f6d;
+  --glow: rgba(198, 241, 53, 0.14);
 }
 
 @theme inline {
@@ -44,29 +28,97 @@
   --color-line: var(--line);
   --color-panel: var(--surface-2);
   --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
   --color-accent-soft: var(--accent-soft);
   --color-up: var(--up);
   --color-down: var(--down);
   --color-watch: var(--watch);
   --color-alert: var(--alert);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-space-grotesk);
   --font-mono: var(--font-geist-mono);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
+  font-feature-settings: "cv11", "ss01";
 }
 
-/* a soft glow behind the top of every page */
-.page-glow {
-  background: radial-gradient(60rem 28rem at 50% -8rem, var(--glow), transparent 70%);
+h1, h2, h3, .font-display {
+  font-family: var(--font-space-grotesk), var(--font-inter), sans-serif;
+  letter-spacing: -0.02em;
+}
+
+/* faint grid fading out from the top, with a lime glow: the backdrop of every page */
+.page-backdrop {
+  position: relative;
+  isolation: isolate;
+}
+.page-backdrop::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 56rem;
+  z-index: -1;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 72px 72px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 30%, transparent 75%);
+}
+.page-backdrop::after {
+  content: "";
+  position: absolute;
+  inset: -12rem 0 auto 0;
+  height: 40rem;
+  z-index: -1;
+  background: radial-gradient(42rem 22rem at 50% 30%, var(--glow), transparent 70%);
+  pointer-events: none;
 }
 
 .card {
-  background: var(--surface);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.012));
   border: 1px solid var(--line);
-  border-radius: 1rem;
+  border-radius: 1.25rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+  box-shadow: 0 0 0 1px rgba(198, 241, 53, 0.4), 0 8px 30px -8px rgba(198, 241, 53, 0.45);
+  transition: transform 150ms ease, box-shadow 150ms ease, opacity 150ms ease;
+}
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 1px rgba(198, 241, 53, 0.6), 0 12px 36px -8px rgba(198, 241, 53, 0.55);
+}
+.btn-primary:disabled {
+  opacity: 0.35;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: var(--foreground);
+  transition: background 150ms ease, border-color 150ms ease;
+}
+.btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.24);
 }
 
 /* anything jumped to clears the sticky header */
@@ -74,16 +126,20 @@ body {
   scroll-margin-top: 6rem;
 }
 
-/* citation targets: highlight the row a citation jumps to */
+/* citation targets: highlight the item a citation jumps to */
 :target {
-  outline: 2px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  outline: 2px solid color-mix(in srgb, var(--accent) 60%, transparent);
   outline-offset: 2px;
-  border-radius: 0.5rem;
+  border-radius: 0.75rem;
 }
 
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+::selection {
+  background: rgba(198, 241, 53, 0.3);
 }
 
 @media (prefers-reduced-motion: reduce) {

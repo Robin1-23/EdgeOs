@@ -35,6 +35,7 @@ FREE_LIMIT = int(os.environ.get("ASK_FREE_LIMIT", "5"))  # ask-box questions per
 PRO_LIMIT = int(os.environ.get("ASK_PRO_LIMIT", "50"))
 HISTORY_DAYS = {"free": 30, "pro": 365}
 CACHE_PUBLIC = "public, max-age=300"  # reports change once a night
+SPARK_POINTS = 30  # closes per index sparkline on the home page
 
 
 def dev_mode() -> bool:
@@ -149,14 +150,31 @@ def home(conn: Conn) -> dict:
             FROM prices_daily a JOIN prices_daily b ON b.security_id = a.security_id AND b.exchange = 'NSE'
             WHERE a.exchange = 'NSE' AND a.trade_date = %(day)s AND b.trade_date = %(prev)s
               AND {visible_sql('a')} AND {visible_sql('b')}""", {"day": day, "prev": prev}).fetchone() if prev else (None,)
+    spark = {n: [float(c) for (c,) in reversed(conn.execute(
+        f"SELECT close FROM index_prices i WHERE index_name = %s AND {visible_sql('i')} ORDER BY trade_date DESC LIMIT %s",
+        (n, SPARK_POINTS)).fetchall())] for n, *_ in indices}
     return {
         "dev_only": dev_mode(),
-        "indices": [{"name": n, "date": d, "close": float(c), "change": float(ch) if ch is not None else None}
+        "indices": [{"name": n, "date": d, "close": float(c), "change": float(ch) if ch is not None else None, "spark": spark[n]}
                     for n, d, c, ch in sorted(indices, key=lambda r: order[r[0]])],
         "breadth": None if breadth[0] is None else
         {"date": breadth[0], "advances": breadth[1], "declines": breadth[2], "unchanged": breadth[3],
          "formula": "Stocks whose NSE close rose, fell or was unchanged versus the previous session's close."},
     }
+
+
+@app.get("/api/indices/{name}")
+def index_series(conn: Conn, name: str, response: Response, start: Annotated[date, Query(alias="from")],
+                 end: Annotated[date | None, Query(alias="to")] = None) -> dict:
+    """Daily closes of one headline index between `from` and `to` (licence-gated rows only)."""
+    if name not in HOME_INDICES:
+        raise HTTPException(404, f"no index named {name!r}")
+    rows = conn.execute(f"SELECT trade_date, close FROM index_prices i WHERE index_name = %s AND trade_date BETWEEN %s AND %s"
+                        f" AND {visible_sql('i')} ORDER BY trade_date", (name, start, end or date.today())).fetchall()
+    if not rows:
+        raise HTTPException(404, f"no closes for {name} in this range" + ("" if dev_mode() else f" {NOT_LICENSED}"))
+    gate(not dev_mode(), response)  # rows were already filtered by licence
+    return {"dev_only": dev_mode(), "name": name, "points": [{"date": d, "close": float(c)} for d, c in rows]}
 
 
 META_SQL = {
@@ -177,6 +195,20 @@ def _agent_slot(conn, agent_id: str, subject: str, as_of: date) -> dict:
     return {"available": True, "envelope": with_formulas(out[0])}
 
 
+def _quote(conn, key: str, as_of: date) -> dict | None:
+    """Last NSE close on or before as_of and its change from the previous close: close / previous - 1."""
+    rows = conn.execute(
+        f"""SELECT p.trade_date, p.close FROM prices_daily p JOIN securities s ON s.id = p.security_id
+            WHERE (s.nse_symbol = %(k)s OR s.isin = %(k)s) AND p.exchange = 'NSE' AND p.trade_date <= %(d)s
+              AND p.trade_date > %(d)s - 30 AND {visible_sql('p')} ORDER BY p.trade_date DESC LIMIT 2""",
+        {"k": key, "d": as_of}).fetchall()
+    if not rows:
+        return None
+    (day, close), prev = rows[0], rows[1][1] if len(rows) > 1 else None
+    return {"date": day, "close": float(close), "change": float(close / prev - 1) if prev else None,
+            "formula": "Change = close / previous close - 1."}
+
+
 def _page(conn, kind: str, key: str, response: Response) -> dict:
     row = conn.execute("SELECT as_of, public_ok, report FROM reports WHERE subject = %s AND status = 'published'"
                        " ORDER BY as_of DESC LIMIT 1", (f"{kind}:{key}",)).fetchone()
@@ -186,8 +218,9 @@ def _page(conn, kind: str, key: str, response: Response) -> dict:
     dev_only = gate(public_ok, response)
     agents = {agent_id: _agent_slot(conn, agent_id, key, as_of) for agent_id in registry.PAGE_AGENTS[kind]}
     meta = conn.execute(META_SQL[kind].format(visible_sql("m")), {"k": key}).fetchone()
+    quote = _quote(conn, key, as_of) if kind == "stock" else None
     return {"dev_only": dev_only, "subject": key, "as_of": as_of, "report": report, "agents": agents,
-            "meta": dict(zip(META_COLS[kind], meta)) if meta else None}
+            "meta": dict(zip(META_COLS[kind], meta)) if meta else None, "quote": quote}
 
 
 def _stock_key(conn, symbol: str) -> str:

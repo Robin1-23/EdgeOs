@@ -291,3 +291,20 @@ def test_ask_answer_from_unlicensed_data_is_withheld(client, db_conn, monkeypatc
     monkeypatch.setattr(main.orchestrator, "ask", fake_ask(db_conn, public_ok=False))
     r = client.post("/api/ask", json={"question": "How has ACME grown?"}, headers=signed_in)
     assert r.status_code == 404 and r.json()["detail"] == main.NOT_LICENSED
+
+
+def test_home_sparklines_and_index_series(client, db_conn):
+    closes = [100.0, 101.0, 99.5]
+    for d, c in zip((date(2026, 10, 23), D1, D2), closes):
+        db_conn.execute("INSERT INTO index_prices (index_name, trade_date, close, source) VALUES ('Nifty 50', %s, %s, %s)", (d, c, LIC))
+    assert client.get("/api/home").json()["indices"][0]["spark"] == closes  # oldest first
+    body = client.get("/api/indices/Nifty 50", params={"from": "2026-10-26", "to": "2026-10-27"}).json()
+    assert [p["close"] for p in body["points"]] == [101.0, 99.5]
+    assert client.get("/api/indices/Not an index", params={"from": "2026-01-01"}).status_code == 404
+
+
+def test_stock_page_quote(client, db_conn):
+    stock(db_conn, "INE000000001", "ACME", "Acme", bars=[(D1, 200), (D2, 210)])
+    report(db_conn, "stock:ACME", D2, public_ok=True)
+    q = client.get("/api/stocks/ACME").json()["quote"]
+    assert (q["date"], q["close"], round(q["change"], 6)) == (str(D2), 210.0, 0.05)  # 210 / 200 - 1

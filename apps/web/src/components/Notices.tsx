@@ -30,7 +30,7 @@ export function EmptyState({ title, detail }: { title: string; detail: string })
       </div>
       <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
       <p className="mt-2 text-muted">{detail}</p>
-      <Link href="/" className="mt-8 inline-flex items-center gap-2 rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-white hover:opacity-90">
+      <Link href="/" className="mt-8 inline-flex items-center gap-2 rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-accent-ink hover:opacity-90">
         Search again <Icon name="arrow" />
       </Link>
     </div>

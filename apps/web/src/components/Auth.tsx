@@ -100,7 +100,7 @@ function SignInDialog({ ref }: { ref: React.RefObject<HTMLDialogElement | null> 
           onChange={(e) => setEmail(e.target.value)}
           className="w-full rounded-xl border border-line bg-background px-3 py-2.5 text-sm"
         />
-        <button type="submit" className="w-full rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-white">Email me a link</button>
+        <button type="submit" className="w-full rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-accent-ink">Email me a link</button>
       </form>
       {status && <p role="status" className="mt-3 text-sm">{status}</p>}
       <button type="button" onClick={close} className="mt-4 text-sm text-muted hover:text-foreground">Close</button>
@@ -114,7 +114,7 @@ export function AccountMenu() {
   if (!configured || !ready) return null;
   if (!user) {
     return (
-      <button type="button" onClick={openSignIn} className="ml-1 rounded-full bg-accent px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90">
+      <button type="button" onClick={openSignIn} className="rounded-full px-3.5 py-2 text-sm text-muted transition-colors hover:text-foreground">
         Sign in
       </button>
     );

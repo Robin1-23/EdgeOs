@@ -1,6 +1,6 @@
 "use client";
 
-import { ColorType, createChart, LineSeries } from "lightweight-charts";
+import { ColorType, createChart, LineSeries, LineStyle } from "lightweight-charts";
 import { useEffect, useRef, useState } from "react";
 import { formatDate, monthsBefore } from "@/lib/format";
 import type { FundSeries } from "@/lib/types";
@@ -41,9 +41,9 @@ export function FundChart({ code, asOf }: { code: string; asOf: string }) {
     const chart = createChart(box.current, {
       autoSize: true,
       layout: { background: { type: ColorType.Solid, color: "transparent" }, textColor: css("--muted"), attributionLogo: true },
-      grid: { vertLines: { color: css("--line") }, horzLines: { color: css("--line") } },
-      rightPriceScale: { borderColor: css("--line") },
-      timeScale: { borderColor: css("--line") },
+      grid: { vertLines: { visible: false }, horzLines: { color: "rgba(255,255,255,0.05)", style: LineStyle.Dashed } },
+      rightPriceScale: { borderVisible: false },
+      timeScale: { borderVisible: false },
     });
     chart.addSeries(LineSeries, { color: css("--accent"), lineWidth: 2, title: "Fund" })
       .setData(series.fund.map((p) => ({ time: p.date, value: p.value })));
@@ -56,20 +56,20 @@ export function FundChart({ code, asOf }: { code: string; asOf: string }) {
   }, [series]);
 
   return (
-    <section aria-labelledby="nav-chart-title" className="card p-5">
+    <section aria-labelledby="nav-chart-title" className="card p-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h2 id="nav-chart-title" className="font-semibold" title={series?.formula}>
           Growth of ₹100
           {series?.benchmark && <span className="ml-2 text-xs font-normal text-muted" title={series.benchmark.label}>vs {series.benchmark.name}</span>}
         </h2>
-        <div role="group" aria-label="Chart range" className="flex rounded-full bg-surface-2 p-1">
+        <div role="group" aria-label="Chart range" className="flex rounded-full border border-line p-1">
           {RANGES.map((r) => (
             <button
               key={r.label}
               type="button"
               aria-pressed={months === r.months}
               onClick={() => setMonths(r.months)}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${months === r.months ? "bg-surface text-foreground shadow-sm" : "text-muted hover:text-foreground"}`}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${months === r.months ? "bg-accent text-accent-ink" : "text-muted hover:text-foreground"}`}
             >
               {r.label}
             </button>
@@ -80,7 +80,7 @@ export function FundChart({ code, asOf }: { code: string; asOf: string }) {
         <p className="py-10 text-center text-sm text-muted">Chart not available: {error}</p>
       ) : (
         <>
-          <div ref={box} className="h-72 w-full" role="img" aria-label="Fund NAV against its benchmark, rebased to 100" />
+          <div ref={box} className="h-80 w-full" role="img" aria-label="Fund NAV against its benchmark, rebased to 100" />
           {series && !series.benchmark && (
             <p className="mt-2 text-xs text-muted">No benchmark is mapped for this category, so the fund is shown alone.</p>
           )}

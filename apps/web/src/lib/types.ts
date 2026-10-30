@@ -44,7 +44,8 @@ export type Report = {
   confidence_reason: string;
   disclaimer: string;
 };
-type Page<M> = { dev_only: boolean; subject: string; as_of: string; report: Report; agents: Record<string, AgentSlot>; meta: M | null };
+export type Quote = { date: string; close: number; change: number | null; formula: string };
+type Page<M> = { dev_only: boolean; subject: string; as_of: string; report: Report; agents: Record<string, AgentSlot>; meta: M | null; quote?: Quote | null };
 export type StockPage = Page<{ name: string | null; isin: string; symbol: string | null; sector: string | null; industry: string | null }>;
 export type FundPage = Page<{ name: string; amc: string; category: string; plan: string | null; option: string | null }>;
 export type SeriesPoint = { date: string; value: number };
@@ -55,7 +56,7 @@ export type FundSeries = {
   formula: string;
 };
 
-export type IndexTile = { name: string; date: string; close: number; change: number | null };
+export type IndexTile = { name: string; date: string; close: number; change: number | null; spark: number[] };
 export type Home = {
   dev_only: boolean;
   indices: IndexTile[];

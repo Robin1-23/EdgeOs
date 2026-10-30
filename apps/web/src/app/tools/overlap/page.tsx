@@ -15,11 +15,14 @@ export default async function OverlapPage({ searchParams }: Props) {
   return (
     <div className="mx-auto max-w-3xl space-y-8 pt-6 sm:pt-10">
       <header className="text-center">
-        <span className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-up/10 text-up">
+        <span className="mx-auto mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-accent-soft text-accent ring-1 ring-accent/20">
           <Icon name="layers" className="h-6 w-6" />
         </span>
-        <h1 className="text-3xl font-semibold tracking-tight sm:text-5xl">Fund overlap</h1>
-        <p className="mx-auto mt-3 max-w-md text-muted">How much do your funds hold in common?</p>
+        <h1 className="text-4xl font-semibold leading-[1.05] sm:text-6xl">
+          Do your funds
+          <span className="block text-muted/80">really diversify?</span>
+        </h1>
+        <p className="mx-auto mt-5 max-w-md text-muted">Pick two or more funds to see what they hold in common.</p>
       </header>
       <OverlapTool initialCodes={codes} />
     </div>

@@ -4,7 +4,9 @@ import { citeLabels } from "@/components/Evidence";
 import { FundChart } from "@/components/FundChart";
 import { DevBanner, EmptyState } from "@/components/Notices";
 import { Icon } from "@/components/Icons";
-import { AgentSections, ConfidenceBadge, ReportGaps, ReportSections } from "@/components/ReportBody";
+import {
+  AgentSections, AskCta, BothSides, ConfidenceBadge, KeyNumbers, OpenQuestions, ReportGaps, SummaryCard,
+} from "@/components/ReportBody";
 import { apiGet } from "@/lib/api";
 import { anchorId, formatDate, formatValue } from "@/lib/format";
 import { returnsRows } from "@/lib/funds";
@@ -79,25 +81,35 @@ export default async function FundPageView({ params }: Props) {
   const mf2 = agents.MF2?.available ? agents.MF2.envelope : null;
 
   return (
-    <article className="space-y-10">
+    <article className="space-y-6">
       <DevBanner show={dev_only} />
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="space-y-3">
           <div className="flex flex-wrap items-center gap-2 text-xs">
-            <span className="rounded-full bg-up/10 px-2.5 py-1 font-medium text-up">Mutual fund · {subject}</span>
+            <span className="rounded-full bg-accent-soft px-2.5 py-1 font-mono font-medium text-accent">Mutual fund · {subject}</span>
             {meta?.plan && <span className="rounded-full bg-surface-2 px-2.5 py-1 capitalize text-muted">{[meta.plan, meta.option].filter(Boolean).join(" · ")}</span>}
             <ConfidenceBadge level={report.confidence} reason={report.confidence_reason} />
           </div>
-          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{meta?.name ?? `AMFI ${subject}`}</h1>
+          <h1 className="text-4xl font-semibold sm:text-5xl">{meta?.name ?? `AMFI ${subject}`}</h1>
           <p className="text-sm text-muted">{[meta?.amc, `Report for ${formatDate(as_of)}`].filter(Boolean).join(" · ")}</p>
         </div>
-        <Link href={`/tools/overlap?f=${subject}`} className="inline-flex items-center gap-2 rounded-full border border-line px-4 py-2 text-sm hover:bg-surface-2">
+        <Link href={`/tools/overlap?f=${subject}`} className="btn-ghost px-4 py-2 text-sm">
           <Icon name="layers" /> Compare overlap
         </Link>
       </header>
 
-      <FundChart code={subject} asOf={as_of} />
-      <ReportSections report={report} labels={citeLabels(envelopes)} />
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+        <div className="min-w-0 space-y-6">
+          <FundChart code={subject} asOf={as_of} />
+          <SummaryCard report={report} labels={citeLabels(envelopes)} />
+          <BothSides report={report} labels={citeLabels(envelopes)} />
+        </div>
+        <aside className="space-y-6">
+          <KeyNumbers items={report.key_items} />
+          <OpenQuestions report={report} labels={citeLabels(envelopes)} />
+          <AskCta subject={meta?.name ?? `this fund`} />
+        </aside>
+      </div>
       <AgentSections ids={FUND_AGENTS} agents={agents} extra={mf2 ? { MF2: <ReturnsTable mf2={mf2} /> } : undefined} />
       <ReportGaps gaps={report.gaps} />
     </article>

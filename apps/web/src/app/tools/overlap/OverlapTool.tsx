@@ -104,7 +104,7 @@ export function OverlapTool({ initialCodes }: { initialCodes: string[] }) {
           type="button"
           disabled={rows.length < 2 || busy}
           onClick={compare}
-          className="w-full rounded-2xl bg-accent px-4 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-30"
+          className="btn-primary w-full px-4 py-3.5 text-sm"
         >
           {busy ? "Comparing…" : rows.length < 2 ? "Pick at least two funds" : `Compare ${rows.length} funds`}
         </button>

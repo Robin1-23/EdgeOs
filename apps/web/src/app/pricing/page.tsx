@@ -30,27 +30,29 @@ export default function PricingPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-12 pt-6 sm:pt-10">
       <header className="text-center">
-        <h1 className="text-3xl font-semibold tracking-tight sm:text-5xl">Simple plans</h1>
-        <p className="mx-auto mt-3 max-w-md text-muted">Research is free. Pro is for daily askers.</p>
+        <h1 className="text-4xl font-semibold leading-[1.05] sm:text-6xl">
+          Research is free.
+          <span className="block text-muted/80">Pro is for daily askers.</span>
+        </h1>
       </header>
       <ul className="grid gap-5 sm:grid-cols-2">
         {PLANS.map((p) => (
           <li
             key={p.name}
-            className={`card relative flex flex-col p-7 ${p.featured ? "border-accent/60 shadow-[0_0_0_1px_var(--accent),0_20px_60px_-20px_var(--glow)]" : ""}`}
+            className={`card relative flex flex-col p-8 ${p.featured ? "border-accent/50 shadow-[0_0_0_1px_rgba(198,241,53,0.5),0_30px_80px_-30px_rgba(198,241,53,0.35)]" : ""}`}
           >
             {p.featured && (
-              <span className="absolute -top-3 left-7 rounded-full bg-accent px-3 py-1 text-xs font-medium text-white">Most useful</span>
+              <span className="absolute -top-3 left-7 rounded-full bg-accent px-3 py-1 text-xs font-medium text-accent-ink">Most useful</span>
             )}
             <h2 className="text-lg font-semibold">{p.name}</h2>
             <p className="mt-4 flex items-baseline gap-2">
-              <span className="text-5xl font-semibold tracking-tight">{p.price}</span>
+              <span className="font-display text-6xl font-semibold tracking-tight">{p.price}</span>
               <span className="text-sm text-muted">{p.period}</span>
             </p>
             <ul className="mt-6 flex-1 space-y-3 text-sm">
               {p.items.map((i) => (
                 <li key={i} className="flex items-center gap-3">
-                  <span className={`flex h-5 w-5 items-center justify-center rounded-full ${p.featured ? "bg-accent text-white" : "bg-surface-2 text-foreground"}`}>
+                  <span className={`flex h-5 w-5 items-center justify-center rounded-full ${p.featured ? "bg-accent text-accent-ink" : "bg-surface-2 text-foreground"}`}>
                     <Icon name="check" className="h-3 w-3" />
                   </span>
                   {i}
@@ -59,7 +61,7 @@ export default function PricingPage() {
             </ul>
             <Link
               href="/account"
-              className={`mt-8 rounded-xl px-4 py-3 text-center text-sm font-medium transition-opacity hover:opacity-90 ${p.featured ? "bg-accent text-white" : "bg-surface-2"}`}
+              className={`mt-8 px-4 py-3 text-sm ${p.featured ? "btn-primary" : "btn-ghost"}`}
             >
               {p.cta}
             </Link>

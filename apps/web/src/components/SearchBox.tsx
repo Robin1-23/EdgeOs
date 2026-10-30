@@ -95,13 +95,13 @@ export function SearchBox({ onPickFund, placeholder }: { onPickFund?: (f: Picked
         onFocus={() => setOpen(true)}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
         onKeyDown={onKey}
-        className="w-full rounded-2xl border border-line bg-surface py-4 pl-12 pr-4 text-base shadow-sm outline-none transition placeholder:text-muted/70 focus:border-accent focus:ring-4 focus:ring-accent/15"
+        className="w-full rounded-full border border-white/10 bg-white/[0.04] py-4 pl-13 pr-5 text-base shadow-[0_20px_60px_-30px_rgba(0,0,0,0.8)] outline-none backdrop-blur transition placeholder:text-muted/80 focus:border-accent/60 focus:bg-white/[0.06] focus:ring-4 focus:ring-accent/10"
       />
-      <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted">
+      <span className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-muted">
         <Icon name="search" className="h-5 w-5" />
       </span>
       {showList && (
-        <ul id={listId} role="listbox" className="absolute top-full z-20 mt-2 max-h-96 w-full overflow-y-auto rounded-2xl border border-line bg-surface p-1.5 text-left shadow-2xl">
+        <ul id={listId} role="listbox" className="absolute top-full z-20 mt-2 max-h-96 w-full overflow-y-auto rounded-3xl border border-white/10 bg-[#0d100c]/95 p-2 text-left shadow-[0_30px_80px_-20px_rgba(0,0,0,0.9)] backdrop-blur-xl">
           {opts.length === 0 && <li className="px-3 py-3 text-sm text-muted">No match among covered companies and funds.</li>}
           {opts.map((o, i) => (
             <li
@@ -115,9 +115,9 @@ export function SearchBox({ onPickFund, placeholder }: { onPickFund?: (f: Picked
                 go(o);
               }}
               onMouseEnter={() => setActive(i)}
-              className={`flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-sm ${i === active ? "bg-surface-2" : ""}`}
+              className={`flex cursor-pointer items-center gap-3 rounded-2xl px-3 py-2.5 text-sm ${i === active ? "bg-white/[0.06]" : ""}`}
             >
-              <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${o.fund ? "bg-up/10 text-up" : "bg-accent-soft text-accent"}`}>
+              <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${o.fund ? "bg-white/[0.06] text-foreground" : "bg-accent-soft text-accent"}`}>
                 <Icon name={o.fund ? "layers" : "chart"} />
               </span>
               <span className="min-w-0 flex-1">

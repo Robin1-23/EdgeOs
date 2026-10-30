@@ -137,7 +137,7 @@ export function AskBox() {
             {!configured ? (
               <span className="text-xs text-muted">Not switched on yet</span>
             ) : !ready ? null : !user ? (
-              <button type="button" onClick={openSignIn} className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-white hover:opacity-90">
+              <button type="button" onClick={openSignIn} className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-accent-ink hover:opacity-90">
                 Sign in to ask
               </button>
             ) : busy ? (
@@ -146,7 +146,7 @@ export function AskBox() {
               </button>
             ) : (
               <button type="submit" disabled={!canAsk} aria-label="Ask"
-                      className="flex h-10 w-10 items-center justify-center rounded-full bg-accent text-white transition-opacity hover:opacity-90 disabled:opacity-30">
+                      className="flex h-10 w-10 items-center justify-center rounded-full bg-accent text-accent-ink transition-opacity hover:opacity-90 disabled:opacity-30">
                 <Icon name="send" />
               </button>
             )}
