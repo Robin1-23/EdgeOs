@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { AgentSection } from "@/components/Evidence";
+import { Icon } from "@/components/Icons";
 import { DevBanner } from "@/components/Notices";
 import { type PickedFund, SearchBox } from "@/components/SearchBox";
 import { anchorId, formatValue } from "@/lib/format";
@@ -69,9 +70,9 @@ export function OverlapTool({ initialCodes }: { initialCodes: string[] }) {
           />
         )}
         {rows.length > 0 && (
-          <ul className="divide-y divide-line rounded-lg border border-line">
+          <ul className="card divide-y divide-line overflow-hidden">
             {rows.map((r, i) => (
-              <li key={r.amfi_code} className="flex flex-wrap items-center gap-3 px-3 py-2">
+              <li key={r.amfi_code} className="flex flex-wrap items-center gap-3 px-4 py-3">
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-medium">{r.name}</span>
                   <span className="text-xs text-muted">AMFI {r.amfi_code}</span>
@@ -83,17 +84,17 @@ export function OverlapTool({ initialCodes }: { initialCodes: string[] }) {
                     type="number"
                     inputMode="numeric"
                     min={1}
-                    placeholder="amount (optional)"
+                    placeholder="Amount"
                     value={r.amount}
                     onChange={(e) => {
                       setRows(rows.map((x, j) => (j === i ? { ...x, amount: e.target.value } : x)));
                       setResult(null);
                     }}
-                    className="w-40 rounded border border-line bg-background px-2 py-1 font-mono"
+                    className="w-36 rounded-xl border border-line bg-background px-3 py-2 font-mono text-sm outline-none focus:border-accent"
                   />
                 </label>
-                <button type="button" onClick={() => update(rows.filter((_, j) => j !== i))} className="text-sm text-muted hover:text-foreground" aria-label={`Remove ${r.name}`}>
-                  Remove
+                <button type="button" onClick={() => update(rows.filter((_, j) => j !== i))} className="flex h-9 w-9 items-center justify-center rounded-full text-muted hover:bg-surface-2 hover:text-foreground" aria-label={`Remove ${r.name}`}>
+                  <Icon name="x" />
                 </button>
               </li>
             ))}
@@ -103,10 +104,11 @@ export function OverlapTool({ initialCodes }: { initialCodes: string[] }) {
           type="button"
           disabled={rows.length < 2 || busy}
           onClick={compare}
-          className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-background disabled:opacity-40"
+          className="w-full rounded-2xl bg-accent px-4 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-30"
         >
           {busy ? "Comparing…" : rows.length < 2 ? "Pick at least two funds" : `Compare ${rows.length} funds`}
         </button>
+        {rows.length > 0 && <p className="text-center text-xs text-muted">Amounts are optional and never go in the page link.</p>}
         {error && <p role="alert" className="text-sm text-alert">Could not compare: {error}</p>}
       </section>
 
@@ -115,8 +117,8 @@ export function OverlapTool({ initialCodes }: { initialCodes: string[] }) {
           <DevBanner show={result.dev_only} />
           <h2 id="result-title" className="text-lg font-semibold">Overlap</h2>
           <OverlapGrid funds={rows} env={result.envelope} />
-          <h2 className="text-lg font-semibold">Everything the comparison found</h2>
-          <AgentSection envelope={result.envelope} />
+          <h2 className="text-lg font-semibold">Details</h2>
+          <div className="card p-5"><AgentSection envelope={result.envelope} /></div>
         </section>
       )}
     </div>
@@ -126,7 +128,7 @@ export function OverlapTool({ initialCodes }: { initialCodes: string[] }) {
 /** Pairwise overlap from MF1: each cell is the shared share of the two portfolios and the stocks both hold. */
 function OverlapGrid({ funds, env }: { funds: Row[]; env: Envelope }) {
   return (
-    <div className="overflow-x-auto">
+    <div className="card overflow-x-auto p-4">
       <table className="text-sm">
         <thead>
           <tr>

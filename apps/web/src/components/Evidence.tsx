@@ -1,3 +1,4 @@
+import { Icon } from "@/components/Icons";
 import { anchorId, formatDate, formatValue } from "@/lib/format";
 import type { CitedText, Envelope } from "@/lib/types";
 
@@ -28,103 +29,105 @@ export function citeLabels(envelopes: Envelope[], prefixOf: (e: Envelope) => str
   return out;
 }
 
-export function CitedList({ items, labels, empty }: { items: CitedText[]; labels: Map<string, string>; empty?: string }) {
+/** Sentences with their citations as small numbered markers; each opens the number it cites (full name on hover). */
+export function CitedList({ items, labels, empty, tone }: { items: CitedText[]; labels: Map<string, string>; empty?: string; tone?: "up" | "down" }) {
   if (!items.length) return empty ? <p className="text-sm text-muted">{empty}</p> : null;
+  const dot = tone === "up" ? "bg-up" : tone === "down" ? "bg-down" : "bg-accent";
   return (
-    <ul className="space-y-2">
+    <ul className="space-y-3">
       {items.map((p, i) => (
-        <li key={i} className="leading-relaxed">
-          {p.text}{" "}
-          {p.cites.map((c) => (
-            <a
-              key={c}
-              href={`#${anchorId(c)}`}
-              title={labels.get(c) ?? c}
-              className="ml-1 inline-block max-w-[14rem] truncate rounded bg-panel px-1.5 py-0.5 align-middle text-[11px] text-muted hover:text-accent"
-            >
-              {labels.get(c) ?? c}
-            </a>
-          ))}
+        <li key={i} className="flex gap-3 leading-relaxed">
+          <span className={`mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full ${dot}`} aria-hidden />
+          <span>
+            {p.text}
+            {p.cites.length > 0 && (
+              <a
+                href={`#${anchorId(p.cites[0])}`}
+                title={`Sources: ${p.cites.map((c) => labels.get(c) ?? c).join(" · ")}`}
+                aria-label={`${p.cites.length} source${p.cites.length > 1 ? "s" : ""}: ${p.cites.map((c) => labels.get(c) ?? c).join(", ")}`}
+                className="ml-1.5 inline-flex items-center gap-1 rounded-full bg-surface-2 px-1.5 py-0.5 align-[1px] text-[10px] font-medium text-muted no-underline transition-colors hover:bg-accent hover:text-white"
+              >
+                <Icon name="info" className="h-3 w-3" />
+                {p.cites.length}
+              </a>
+            )}
+          </span>
         </li>
       ))}
     </ul>
   );
 }
 
-const SEVERITY = { info: "border-line text-muted", watch: "border-watch/60 text-watch", alert: "border-alert/60 text-alert" };
+const SEVERITY = {
+  info: "bg-surface-2 text-muted",
+  watch: "bg-watch/10 text-watch",
+  alert: "bg-alert/10 text-alert",
+};
 
-/** One agent's result: metrics (each with its formula and source), findings, flags and what it could not compute. */
+/** One agent's result: flags, findings, metric tiles (each with its formula and source) and what it could not compute. */
 export function AgentSection({ envelope: e, prefix = e.agent_id }: { envelope: Envelope; prefix?: string }) {
   const sources = new Map(e.sources.map((s) => [s.id, s]));
   return (
-    <div className="space-y-4">
-      <p className="text-xs text-muted">
-        As of {formatDate(e.as_of)} · confidence {e.confidence.level}: {e.confidence.reason}
-      </p>
+    <div className="space-y-5">
       {e.flags.length > 0 && (
-        <ul className="space-y-1">
+        <ul className="flex flex-wrap gap-2">
           {e.flags.map((f, i) => (
-            <li key={i} id={anchorId(`${prefix}:flag:${i}`)} className={`rounded border px-3 py-1.5 text-sm ${SEVERITY[f.severity]}`}>
-              <span className="mr-2 text-[11px] font-semibold uppercase tracking-wide">{f.severity}</span>
-              <span className="text-foreground">{f.reason}</span>
+            <li key={i} id={anchorId(`${prefix}:flag:${i}`)} className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm ${SEVERITY[f.severity]}`}>
+              <Icon name="alert" className="h-3.5 w-3.5" />
+              <span>{f.reason}</span>
             </li>
           ))}
         </ul>
       )}
       {e.findings.length > 0 && (
-        <ul className="list-disc space-y-1 pl-5 text-sm">
+        <ul className="space-y-2 text-sm">
           {e.findings.map((f) => (
-            <li key={f.id} id={anchorId(`${prefix}:finding:${f.id}`)}>
+            <li key={f.id} id={anchorId(`${prefix}:finding:${f.id}`)} className="rounded-xl bg-surface-2 px-4 py-3">
               {f.text}
             </li>
           ))}
         </ul>
       )}
       {e.metrics.length > 0 && (
-        <table className="w-full text-sm">
-          <thead className="sr-only">
-            <tr>
-              <th>Measure</th>
-              <th>Value</th>
-              <th>Formula and source</th>
-            </tr>
-          </thead>
-          <tbody>
-            {e.metrics.map((m) => {
-              const src = sources.get(m.source_query_id);
-              return (
-                <tr key={m.id} id={anchorId(`${prefix}:${m.id}`)} className="border-b border-line align-top last:border-0">
-                  <td className="py-1.5 pr-3">{m.name}</td>
-                  <td className="py-1.5 pr-3 text-right font-mono tabular-nums whitespace-nowrap">{formatValue(m.value, m.unit)}</td>
-                  <td className="w-8 py-1.5 text-right">
-                    <details className="group relative">
-                      <summary aria-label={`How "${m.name}" is computed`} className="cursor-pointer list-none text-muted hover:text-accent">
-                        ⓘ
-                      </summary>
-                      <div className="absolute right-0 z-10 mt-1 w-72 rounded border border-line bg-background p-3 text-left text-xs shadow-lg">
-                        <p>{m.formula ?? "Formula definition missing."}</p>
-                        {src && <p className="mt-2 text-muted break-words">Source: {src.ref}</p>}
-                      </div>
-                    </details>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      )}
-      {e.gaps.length > 0 && (
-        <div className="text-xs text-muted">
-          <p className="font-medium">Not available</p>
-          <ul className="mt-1 space-y-0.5">
-            {e.gaps.map((g, i) => (
-              <li key={i}>
-                {g.item}: {g.reason}
+        <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+          {e.metrics.map((m) => {
+            const src = sources.get(m.source_query_id);
+            return (
+              <li key={m.id} id={anchorId(`${prefix}:${m.id}`)} className="relative rounded-xl border border-line bg-surface-2/50 px-3 py-3">
+                <div className="flex items-start justify-between gap-2">
+                  <span className="text-xs leading-snug text-muted">{m.name}</span>
+                  <details className="relative shrink-0">
+                    <summary aria-label={`How "${m.name}" is computed`} className="-m-1 flex h-6 w-6 cursor-pointer list-none items-center justify-center rounded-full text-muted hover:bg-surface hover:text-accent">
+                      <Icon name="info" className="h-3.5 w-3.5" />
+                    </summary>
+                    <div className="absolute right-0 z-20 mt-2 w-72 rounded-xl border border-line bg-surface p-3 text-left text-xs shadow-2xl">
+                      <p className="leading-relaxed">{m.formula ?? "Formula definition missing."}</p>
+                      {src && <p className="mt-2 break-words text-muted">Source: {src.ref}</p>}
+                    </div>
+                  </details>
+                </div>
+                <p className="mt-1.5 font-mono text-base font-semibold tabular-nums">{formatValue(m.value, m.unit)}</p>
               </li>
-            ))}
-          </ul>
-        </div>
+            );
+          })}
+        </ul>
       )}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted">
+        <span>As of {formatDate(e.as_of)}</span>
+        <span title={e.confidence.reason}>Confidence: {e.confidence.level}</span>
+        {e.gaps.length > 0 && (
+          <details className="w-full">
+            <summary className="cursor-pointer select-none hover:text-foreground">{e.gaps.length} item{e.gaps.length > 1 ? "s" : ""} not available</summary>
+            <ul className="mt-2 space-y-1 border-l border-line pl-3">
+              {e.gaps.map((g, i) => (
+                <li key={i}>
+                  <span className="text-foreground/80">{g.item}</span>: {g.reason}
+                </li>
+              ))}
+            </ul>
+          </details>
+        )}
+      </div>
     </div>
   );
 }

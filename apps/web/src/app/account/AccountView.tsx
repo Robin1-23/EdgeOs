@@ -70,11 +70,11 @@ export function AccountView() {
   if (!ready) return null;
   if (!user) {
     return (
-      <div className="mx-auto max-w-md py-12 text-center">
-        <h1 className="text-xl font-semibold">Your account</h1>
+      <div className="card mx-auto max-w-md p-8 text-center">
+        <h1 className="text-3xl font-semibold tracking-tight">Your account</h1>
         {message && <p role="status" className="mt-2">{message}</p>}
         <p className="mt-2 text-muted">Sign in to see your plan, your allowance and your past questions.</p>
-        <button type="button" onClick={openSignIn} className="mt-4 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-background">
+        <button type="button" onClick={openSignIn} className="mt-6 rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-white hover:opacity-90">
           Sign in
         </button>
       </div>
@@ -133,51 +133,58 @@ export function AccountView() {
 
   const sub = acct?.subscription;
   return (
-    <div className="space-y-8">
+    <div className="mx-auto max-w-3xl space-y-6">
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight">Your account</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">Your account</h1>
         <p className="mt-1 text-sm text-muted">Signed in as {user.email ?? user.displayName}</p>
       </header>
-      {message && <p role="status" className="rounded border border-line px-3 py-2 text-sm">{message}</p>}
+      {message && <p role="status" className="card px-4 py-3 text-sm">{message}</p>}
 
       {acct && (
         <>
-          <section aria-labelledby="plan-title" className="rounded-lg border border-line p-4">
-            <h2 id="plan-title" className="font-semibold">Plan: {acct.plan === "pro" ? "Pro" : "Free"}</h2>
-            <p className="mt-1 text-sm text-muted">
-              {acct.used_today} of {acct.limit} ask-box questions used today ({acct.remaining} left; resets at midnight IST).
-            </p>
+          <section aria-labelledby="plan-title" className="card p-6">
+            <h2 id="plan-title" className="flex items-center gap-2 font-semibold">Plan <span className={`rounded-full px-2.5 py-0.5 text-xs ${acct.plan === "pro" ? "bg-accent text-white" : "bg-surface-2 text-muted"}`}>{acct.plan === "pro" ? "Pro" : "Free"}</span></h2>
+            <div className="mt-4">
+              <div className="flex justify-between text-xs text-muted">
+                <span>Questions today</span>
+                <span className="font-mono">{acct.used_today} / {acct.limit}</span>
+              </div>
+              <div className="mt-2 h-2 overflow-hidden rounded-full bg-surface-2">
+                <div className="h-full rounded-full bg-accent" style={{ width: `${Math.min(100, (100 * acct.used_today) / acct.limit)}%` }} />
+              </div>
+              <p className="mt-2 text-xs text-muted">Resets at midnight IST</p>
+            </div>
             {acct.plan === "pro" && sub?.current_end && (
               <p className="mt-1 text-sm text-muted">
                 {sub.cancel_at_period_end ? "Ends" : "Renews"} on {formatDate(sub.current_end)}.
               </p>
             )}
-            <div className="mt-3 flex flex-wrap gap-3">
+            <div className="mt-5 flex flex-wrap gap-3">
               {acct.plan === "free" &&
                 (acct.billing_available ? (
-                  <button type="button" disabled={busy} onClick={upgrade} className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-background disabled:opacity-40">
+                  <button type="button" disabled={busy} onClick={upgrade} className="rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-40">
                     Upgrade to Pro, ₹399 a month
                   </button>
                 ) : (
                   <p className="text-sm text-muted">Pro is not available to buy yet.</p>
                 ))}
               {acct.plan === "pro" && !sub?.cancel_at_period_end && (
-                <button type="button" onClick={cancel} className="rounded-lg border border-line px-4 py-2 text-sm">Cancel Pro</button>
+                <button type="button" onClick={cancel} className="rounded-full border border-line px-5 py-2.5 text-sm hover:bg-surface-2">Cancel Pro</button>
               )}
               <Link href="/pricing" className="self-center text-sm text-accent underline underline-offset-4">Compare plans</Link>
             </div>
           </section>
 
           <section aria-labelledby="history-title">
-            <h2 id="history-title" className="mb-2 font-semibold">Your questions, last {acct.history_days} days</h2>
+            <h2 id="history-title" className="mb-3 font-semibold">Your questions, last {acct.history_days} days</h2>
             {acct.history.length === 0 ? (
               <p className="text-sm text-muted">
                 None yet. <Link href="/ask" className="text-accent underline underline-offset-4">Ask a question</Link>.
               </p>
             ) : (
-              <ul className="divide-y divide-line rounded-lg border border-line">
+              <ul className="card divide-y divide-line overflow-hidden">
                 {acct.history.map((h) => (
-                  <li key={h.id} className="flex flex-wrap items-baseline justify-between gap-2 px-3 py-2 text-sm">
+                  <li key={h.id} className="flex flex-wrap items-baseline justify-between gap-2 px-4 py-3 text-sm">
                     <Link href={`/ask?id=${h.id}`} className="min-w-0 flex-1 truncate hover:text-accent">{h.question}</Link>
                     <span className="text-xs text-muted">{STATUS_TEXT[h.status] ?? h.status} · {formatDate(h.asked_at)}</span>
                   </li>
@@ -186,12 +193,12 @@ export function AccountView() {
             )}
           </section>
 
-          <section aria-labelledby="delete-title" className="rounded-lg border border-alert/40 p-4">
+          <section aria-labelledby="delete-title" className="card border-alert/30 p-6">
             <h2 id="delete-title" className="font-semibold">Delete your account</h2>
             <p className="mt-1 text-sm text-muted">
               Deletes your questions, answers and sign-in. Payment records are kept as tax law requires. Cancel Pro first.
             </p>
-            <button type="button" onClick={remove} className="mt-3 rounded-lg border border-alert/60 px-4 py-2 text-sm text-alert">
+            <button type="button" onClick={remove} className="mt-4 rounded-full border border-alert/50 px-5 py-2.5 text-sm text-alert hover:bg-alert/10">
               Delete my account
             </button>
           </section>

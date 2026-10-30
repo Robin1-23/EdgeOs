@@ -1,97 +1,116 @@
-import { AGENT_TITLES, AgentSection, CitedList } from "@/components/Evidence";
+import { AgentTabs } from "@/components/AgentTabs";
+import { CitedList } from "@/components/Evidence";
+import { Icon } from "@/components/Icons";
 import { anchorId } from "@/lib/format";
-import type { AgentSlot, Report } from "@/lib/types";
+import type { AgentSlot, Report, ReportItem } from "@/lib/types";
 
-/** The mother agent's synthesis, shared by stock and fund pages: summary, key items, debate and risks. */
+/** "Close: Rs 1,001.20" -> ["Close", "₹1,001.20"]: the agents' own formatted text, split for a stat tile. */
+function splitItem(text: string): [string, string] {
+  const i = text.lastIndexOf(": ");
+  if (i < 0) return [text, ""];
+  return [text.slice(0, i), text.slice(i + 2).replace(/^Rs -/, "−₹").replace(/^Rs /, "₹")];
+}
+
+function KeyItems({ items }: { items: ReportItem[] }) {
+  const tiles = items.map((k) => [k, ...splitItem(k.text)] as const).filter(([, , v]) => v && v.length <= 24);
+  if (!tiles.length) return null;
+  return (
+    <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      {tiles.slice(0, 4).map(([k, label, value]) => (
+        <li key={k.id}>
+          <a href={`#${anchorId(k.id)}`} className="card block h-full p-4 transition-colors hover:border-accent/40">
+            <span className="line-clamp-2 text-xs text-muted">{label}</span>
+            <span className="mt-1 block font-mono text-lg font-semibold tabular-nums">{value}</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+const CONFIDENCE = { high: "bg-up/10 text-up", medium: "bg-watch/10 text-watch", low: "bg-surface-2 text-muted" };
+
+export function ConfidenceBadge({ level, reason }: { level: Report["confidence"]; reason: string }) {
+  return (
+    <span title={reason} className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${CONFIDENCE[level]}`}>
+      {level[0].toUpperCase() + level.slice(1)} confidence
+    </span>
+  );
+}
+
+/** The mother agent's synthesis, shared by stock and fund pages: summary, key numbers, both sides, open questions. */
 export function ReportSections({ report, labels }: { report: Report; labels: Map<string, string> }) {
   return (
     <>
-      <section aria-labelledby="summary-title" className="space-y-3">
-        <h2 id="summary-title" className="text-lg font-semibold">Summary</h2>
+      <section aria-labelledby="summary-title" className="card p-6">
+        <h2 id="summary-title" className="mb-4 flex items-center gap-2 text-lg font-semibold">
+          <Icon name="sparkles" className="h-5 w-5 text-accent" /> Summary
+        </h2>
         <CitedList items={report.summary} labels={labels} empty="No summary could be published for this report." />
-        {report.key_items.length > 0 && (
-          <ul className="grid gap-2 pt-2 sm:grid-cols-2">
-            {report.key_items.map((k) => (
-              <li key={k.id} className="rounded border border-line px-3 py-2 text-sm">
-                <a href={`#${anchorId(k.id)}`} className="hover:text-accent">{k.text}</a>
-              </li>
-            ))}
-          </ul>
-        )}
       </section>
 
-      <section aria-labelledby="debate-title">
-        <h2 id="debate-title" className="mb-3 text-lg font-semibold">What supports and what weighs</h2>
+      <KeyItems items={report.key_items} />
+
+      <section aria-labelledby="debate-title" className="space-y-4">
+        <h2 id="debate-title" className="text-lg font-semibold">Both sides</h2>
         <div className="grid gap-4 md:grid-cols-2">
-          <div className="rounded-lg border border-line p-4">
-            <h3 className="mb-2 text-sm font-semibold">Supportive points</h3>
-            <CitedList items={report.bull} labels={labels} empty="No supportive point passed verification." />
+          <div className="card overflow-hidden">
+            <h3 className="flex items-center gap-2 border-b border-line bg-up/5 px-5 py-3 text-sm font-semibold text-up">
+              <Icon name="up" /> What supports
+            </h3>
+            <div className="p-5"><Side items={report.bull} labels={labels} tone="up" /></div>
           </div>
-          <div className="rounded-lg border border-line p-4">
-            <h3 className="mb-2 text-sm font-semibold">Concerns</h3>
-            <CitedList items={report.bear} labels={labels} empty="No concern passed verification." />
+          <div className="card overflow-hidden">
+            <h3 className="flex items-center gap-2 border-b border-line bg-down/5 px-5 py-3 text-sm font-semibold text-down">
+              <Icon name="down" /> What weighs
+            </h3>
+            <div className="p-5"><Side items={report.bear} labels={labels} tone="down" /></div>
           </div>
         </div>
       </section>
 
-      {(report.risk_notes.length > 0 || report.risks.length > 0) && (
-        <section aria-labelledby="risks-title" className="space-y-3">
-          <h2 id="risks-title" className="text-lg font-semibold">Risks and open questions</h2>
+      {report.risk_notes.length > 0 && (
+        <section aria-labelledby="risks-title" className="card p-6">
+          <h2 id="risks-title" className="mb-4 flex items-center gap-2 text-lg font-semibold">
+            <Icon name="alert" className="h-5 w-5 text-watch" /> Open questions
+          </h2>
           <CitedList items={report.risk_notes} labels={labels} />
-          {report.risks.length > 0 && (
-            <ul className="space-y-1 text-sm">
-              {report.risks.map((r) => (
-                <li key={r.id}>
-                  <a href={`#${anchorId(r.id)}`} className="hover:text-accent">{r.text}</a>
-                </li>
-              ))}
-            </ul>
-          )}
         </section>
       )}
     </>
   );
 }
 
-/** One collapsible section per agent, in `ids` order; `extra` renders above an agent's generic tables. */
-export function AgentSections({ ids, agents, extra }: { ids: string[]; agents: Record<string, AgentSlot>; extra?: Record<string, React.ReactNode> }) {
+const SHOWN = 4;
+
+function Side({ items, labels, tone }: { items: Report["bull"]; labels: Map<string, string>; tone: "up" | "down" }) {
   return (
-    <section aria-labelledby="detail-title" className="space-y-4">
-      <h2 id="detail-title" className="text-lg font-semibold">The evidence, agent by agent</h2>
-      {ids.map((id) => {
-        const slot = agents[id];
-        return (
-          <details key={id} open className="rounded-lg border border-line">
-            <summary className="cursor-pointer px-4 py-3 font-medium">{AGENT_TITLES[id] ?? id}</summary>
-            <div className="space-y-4 border-t border-line px-4 py-3">
-              {!slot ? (
-                <p className="text-sm text-muted">Not part of this report.</p>
-              ) : slot.available ? (
-                <>
-                  {extra?.[id]}
-                  <AgentSection envelope={slot.envelope} />
-                </>
-              ) : (
-                <p className="text-sm text-muted">Not available: {slot.reason}.</p>
-              )}
-            </div>
-          </details>
-        );
-      })}
-    </section>
+    <>
+      <CitedList items={items.slice(0, SHOWN)} labels={labels} tone={tone} empty="Nothing passed verification." />
+      {items.length > SHOWN && (
+        <details className="mt-3">
+          <summary className="cursor-pointer select-none text-sm text-muted hover:text-foreground">Show {items.length - SHOWN} more</summary>
+          <div className="mt-3"><CitedList items={items.slice(SHOWN)} labels={labels} tone={tone} /></div>
+        </details>
+      )}
+    </>
   );
+}
+
+export function AgentSections(props: { ids: string[]; agents: Record<string, AgentSlot>; extra?: Record<string, React.ReactNode> }) {
+  return <AgentTabs {...props} />;
 }
 
 export function ReportGaps({ gaps }: { gaps: string[] }) {
   if (!gaps.length) return null;
   return (
-    <section aria-labelledby="gaps-title" className="text-xs text-muted">
-      <h2 id="gaps-title" className="font-medium">What this report could not cover</h2>
-      <ul className="mt-1 space-y-0.5">
+    <details className="text-xs text-muted">
+      <summary className="cursor-pointer select-none hover:text-foreground">What this report could not cover ({gaps.length})</summary>
+      <ul className="mt-2 space-y-1 border-l border-line pl-3">
         {gaps.map((g, i) => (
           <li key={i}>{g}</li>
         ))}
       </ul>
-    </section>
+    </details>
   );
 }

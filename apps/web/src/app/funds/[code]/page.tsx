@@ -3,7 +3,8 @@ import Link from "next/link";
 import { citeLabels } from "@/components/Evidence";
 import { FundChart } from "@/components/FundChart";
 import { DevBanner, EmptyState } from "@/components/Notices";
-import { AgentSections, ReportGaps, ReportSections } from "@/components/ReportBody";
+import { Icon } from "@/components/Icons";
+import { AgentSections, ConfidenceBadge, ReportGaps, ReportSections } from "@/components/ReportBody";
 import { apiGet } from "@/lib/api";
 import { anchorId, formatDate, formatValue } from "@/lib/format";
 import { returnsRows } from "@/lib/funds";
@@ -44,7 +45,7 @@ function ReturnsTable({ mf2 }: { mf2: Envelope }) {
   const rows = returnsRows(mf2);
   if (!rows.length) return null;
   return (
-    <table className="w-full max-w-lg text-sm">
+    <table className="w-full max-w-xl text-sm">
       <caption className="mb-1 text-left text-xs text-muted">Returns, annualised beyond one year (growth option NAV)</caption>
       <thead>
         <tr className="border-b border-line text-xs text-muted">
@@ -78,18 +79,20 @@ export default async function FundPageView({ params }: Props) {
   const mf2 = agents.MF2?.available ? agents.MF2.envelope : null;
 
   return (
-    <article className="space-y-8">
+    <article className="space-y-10">
       <DevBanner show={dev_only} />
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight">{meta?.name ?? `AMFI ${subject}`}</h1>
-        <p className="mt-1 text-sm text-muted">
-          {[meta?.amc, meta?.category, [meta?.plan, meta?.option].filter(Boolean).join(", "), `AMFI ${subject}`].filter(Boolean).join(" · ")}
-        </p>
-        <p className="mt-1 text-sm text-muted">
-          Report for {formatDate(as_of)} · confidence {report.confidence}: {report.confidence_reason}
-        </p>
-        <Link href={`/tools/overlap?f=${subject}`} className="mt-2 inline-block text-sm text-accent underline underline-offset-4">
-          Compare its portfolio with other funds
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <span className="rounded-full bg-up/10 px-2.5 py-1 font-medium text-up">Mutual fund · {subject}</span>
+            {meta?.plan && <span className="rounded-full bg-surface-2 px-2.5 py-1 capitalize text-muted">{[meta.plan, meta.option].filter(Boolean).join(" · ")}</span>}
+            <ConfidenceBadge level={report.confidence} reason={report.confidence_reason} />
+          </div>
+          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{meta?.name ?? `AMFI ${subject}`}</h1>
+          <p className="text-sm text-muted">{[meta?.amc, `Report for ${formatDate(as_of)}`].filter(Boolean).join(" · ")}</p>
+        </div>
+        <Link href={`/tools/overlap?f=${subject}`} className="inline-flex items-center gap-2 rounded-full border border-line px-4 py-2 text-sm hover:bg-surface-2">
+          <Icon name="layers" /> Compare overlap
         </Link>
       </header>
 

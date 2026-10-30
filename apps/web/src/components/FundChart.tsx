@@ -56,19 +56,20 @@ export function FundChart({ code, asOf }: { code: string; asOf: string }) {
   }, [series]);
 
   return (
-    <section aria-labelledby="nav-chart-title" className="rounded-lg border border-line p-3">
-      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <h2 id="nav-chart-title" className="text-sm font-semibold" title={series?.formula}>
-          Growth of 100{series?.benchmark ? ` vs ${series.benchmark.label}` : ""}
+    <section aria-labelledby="nav-chart-title" className="card p-5">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <h2 id="nav-chart-title" className="font-semibold" title={series?.formula}>
+          Growth of ₹100
+          {series?.benchmark && <span className="ml-2 text-xs font-normal text-muted" title={series.benchmark.label}>vs {series.benchmark.name}</span>}
         </h2>
-        <div role="group" aria-label="Chart range" className="flex gap-1">
+        <div role="group" aria-label="Chart range" className="flex rounded-full bg-surface-2 p-1">
           {RANGES.map((r) => (
             <button
               key={r.label}
               type="button"
               aria-pressed={months === r.months}
               onClick={() => setMonths(r.months)}
-              className={`rounded px-2 py-1 text-xs border ${months === r.months ? "border-accent text-accent" : "border-line text-muted hover:text-foreground"}`}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${months === r.months ? "bg-surface text-foreground shadow-sm" : "text-muted hover:text-foreground"}`}
             >
               {r.label}
             </button>
@@ -83,7 +84,7 @@ export function FundChart({ code, asOf }: { code: string; asOf: string }) {
           {series && !series.benchmark && (
             <p className="mt-2 text-xs text-muted">No benchmark is mapped for this category, so the fund is shown alone.</p>
           )}
-          {series && <p className="mt-1 text-xs text-muted">Up to {formatDate(asOf)}. {series.formula}</p>}
+          {series && <p className="mt-2 text-xs text-muted">Up to {formatDate(asOf)} · benchmark is a price index, not total return</p>}
         </>
       )}
     </section>

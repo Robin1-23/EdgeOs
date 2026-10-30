@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useState } from "react";
+import { Icon } from "@/components/Icons";
 import type { SearchResult } from "@/lib/types";
 
 export type PickedFund = { amfi_code: string; name: string };
@@ -9,7 +10,7 @@ type Option = { key: string; label: string; detail: string; href: string | null;
 
 function options(r: SearchResult | null, pickFunds: boolean): Option[] {
   if (!r) return [];
-  const funds = r.funds.map((f) => ({ key: `f-${f.amfi_code}`, label: f.name, detail: `Fund · AMFI ${f.amfi_code}`, href: `/funds/${f.amfi_code}`, fund: f }));
+  const funds = r.funds.map((f) => ({ key: `f-${f.amfi_code}`, label: f.name, detail: `Mutual fund · ${f.amfi_code}`, href: `/funds/${f.amfi_code}`, fund: f }));
   if (pickFunds) return funds;
   return [...r.stocks.map((s) => ({ key: `s-${s.isin}`, label: s.symbol, detail: s.name ?? s.isin, href: `/stocks/${encodeURIComponent(s.symbol)}` })), ...funds];
 }
@@ -85,7 +86,7 @@ export function SearchBox({ onPickFund, placeholder }: { onPickFund?: (f: Picked
         aria-autocomplete="list"
         aria-activedescendant={active >= 0 && opts[active] ? `${listId}-${active}` : undefined}
         autoComplete="off"
-        placeholder={placeholder ?? "Search by company, NSE symbol, ISIN or fund name"}
+        placeholder={placeholder ?? "Search a company or fund"}
         value={q}
         onChange={(e) => {
           setQ(e.target.value);
@@ -94,11 +95,14 @@ export function SearchBox({ onPickFund, placeholder }: { onPickFund?: (f: Picked
         onFocus={() => setOpen(true)}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
         onKeyDown={onKey}
-        className="w-full rounded-lg border border-line bg-background px-4 py-3 text-base outline-none focus:border-accent focus:ring-2 focus:ring-accent/30"
+        className="w-full rounded-2xl border border-line bg-surface py-4 pl-12 pr-4 text-base shadow-sm outline-none transition placeholder:text-muted/70 focus:border-accent focus:ring-4 focus:ring-accent/15"
       />
+      <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted">
+        <Icon name="search" className="h-5 w-5" />
+      </span>
       {showList && (
-        <ul id={listId} role="listbox" className="absolute z-10 mt-1 w-full overflow-hidden rounded-lg border border-line bg-background shadow-lg">
-          {opts.length === 0 && <li className="px-4 py-3 text-sm text-muted">No covered company or fund matches.</li>}
+        <ul id={listId} role="listbox" className="absolute top-full z-20 mt-2 max-h-96 w-full overflow-y-auto rounded-2xl border border-line bg-surface p-1.5 text-left shadow-2xl">
+          {opts.length === 0 && <li className="px-3 py-3 text-sm text-muted">No match among covered companies and funds.</li>}
           {opts.map((o, i) => (
             <li
               key={o.key}
@@ -111,10 +115,15 @@ export function SearchBox({ onPickFund, placeholder }: { onPickFund?: (f: Picked
                 go(o);
               }}
               onMouseEnter={() => setActive(i)}
-              className={`flex items-baseline justify-between gap-4 px-4 py-2 text-sm ${o.href ? "cursor-pointer" : "text-muted"} ${i === active ? "bg-panel" : ""}`}
+              className={`flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-sm ${i === active ? "bg-surface-2" : ""}`}
             >
-              <span className="font-medium truncate">{o.label}</span>
-              <span className="text-xs text-muted truncate">{o.detail}</span>
+              <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${o.fund ? "bg-up/10 text-up" : "bg-accent-soft text-accent"}`}>
+                <Icon name={o.fund ? "layers" : "chart"} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate font-medium">{o.label}</span>
+                <span className="block truncate text-xs text-muted">{o.detail}</span>
+              </span>
             </li>
           ))}
         </ul>

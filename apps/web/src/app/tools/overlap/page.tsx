@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Icon } from "@/components/Icons";
 import { OverlapTool } from "./OverlapTool";
 
 export const metadata: Metadata = {
@@ -12,13 +13,13 @@ export default async function OverlapPage({ searchParams }: Props) {
   const { f } = await searchParams;
   const codes = (f ?? "").split(",").filter((c) => /^\d+$/.test(c)).slice(0, 20);
   return (
-    <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight">Fund overlap</h1>
-        <p className="mt-1 max-w-2xl text-muted">
-          Pick two or more schemes to see how much of their portfolios they share. Add the amount in each to see your
-          combined stock and sector exposure. Amounts stay in this page; they are not saved or put in the link.
-        </p>
+    <div className="mx-auto max-w-3xl space-y-8 pt-6 sm:pt-10">
+      <header className="text-center">
+        <span className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-up/10 text-up">
+          <Icon name="layers" className="h-6 w-6" />
+        </span>
+        <h1 className="text-3xl font-semibold tracking-tight sm:text-5xl">Fund overlap</h1>
+        <p className="mx-auto mt-3 max-w-md text-muted">How much do your funds hold in common?</p>
       </header>
       <OverlapTool initialCodes={codes} />
     </div>

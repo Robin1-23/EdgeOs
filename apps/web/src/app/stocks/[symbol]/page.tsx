@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { citeLabels } from "@/components/Evidence";
 import { DevBanner, EmptyState } from "@/components/Notices";
 import { PriceChart } from "@/components/PriceChart";
-import { AgentSections, ReportGaps, ReportSections } from "@/components/ReportBody";
+import { AgentSections, ConfidenceBadge, ReportGaps, ReportSections } from "@/components/ReportBody";
 import { apiGet } from "@/lib/api";
 import { formatDate } from "@/lib/format";
 import type { Envelope, StockPage } from "@/lib/types";
@@ -43,16 +43,16 @@ export default async function StockPageView({ params }: Props) {
   const envelopes = Object.values(agents).flatMap((a) => (a.available ? [a.envelope] : [])) as Envelope[];
 
   return (
-    <article className="space-y-8">
+    <article className="space-y-10">
       <DevBanner show={dev_only} />
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight">{meta?.name ?? subject}</h1>
-        <p className="mt-1 text-sm text-muted">
-          {[meta?.name ? `NSE: ${subject}` : null, meta?.isin, meta?.industry ?? meta?.sector].filter(Boolean).join(" · ")}
-        </p>
-        <p className="mt-1 text-sm text-muted">
-          Report for {formatDate(as_of)} · confidence {report.confidence}: {report.confidence_reason}
-        </p>
+      <header className="space-y-3">
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <span className="rounded-full bg-accent-soft px-2.5 py-1 font-medium text-accent">NSE · {subject}</span>
+          {(meta?.industry ?? meta?.sector) && <span className="rounded-full bg-surface-2 px-2.5 py-1 text-muted">{meta?.industry ?? meta?.sector}</span>}
+          <ConfidenceBadge level={report.confidence} reason={report.confidence_reason} />
+        </div>
+        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{meta?.name ?? subject}</h1>
+        <p className="text-sm text-muted">Report for {formatDate(as_of)}{meta?.isin ? ` · ${meta.isin}` : ""}</p>
       </header>
 
       <PriceChart symbol={subject} asOf={as_of} />

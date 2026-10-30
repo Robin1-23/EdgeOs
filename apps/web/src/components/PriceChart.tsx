@@ -58,19 +58,19 @@ export function PriceChart({ symbol, asOf }: { symbol: string; asOf: string }) {
   }, [bars]);
 
   return (
-    <section aria-labelledby="chart-title" className="rounded-lg border border-line p-3">
-      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <h2 id="chart-title" className="text-sm font-semibold">
-          Price (NSE, daily, not adjusted for splits or bonuses)
+    <section aria-labelledby="chart-title" className="card p-5">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <h2 id="chart-title" className="font-semibold">
+          Price <span className="ml-1 text-xs font-normal text-muted" title="Daily NSE prices, not adjusted for splits or bonuses">NSE · daily · unadjusted</span>
         </h2>
-        <div role="group" aria-label="Chart range" className="flex gap-1">
+        <div role="group" aria-label="Chart range" className="flex rounded-full bg-surface-2 p-1">
           {RANGES.map((r) => (
             <button
               key={r.label}
               type="button"
               aria-pressed={months === r.months}
               onClick={() => setMonths(r.months)}
-              className={`rounded px-2 py-1 text-xs border ${months === r.months ? "border-accent text-accent" : "border-line text-muted hover:text-foreground"}`}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${months === r.months ? "bg-surface text-foreground shadow-sm" : "text-muted hover:text-foreground"}`}
             >
               {r.label}
             </button>

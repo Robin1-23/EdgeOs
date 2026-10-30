@@ -12,6 +12,7 @@ import {
 } from "firebase/auth";
 import Link from "next/link";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { Icon } from "@/components/Icons";
 import { EMAIL_KEY, authConfigured, firebaseAuth } from "@/lib/firebase";
 
 type AuthState = { configured: boolean; ready: boolean; user: User | null; openSignIn: () => void };
@@ -82,10 +83,10 @@ function SignInDialog({ ref }: { ref: React.RefObject<HTMLDialogElement | null> 
   }
 
   return (
-    <dialog ref={ref} aria-labelledby="signin-title" className="m-auto w-[min(26rem,calc(100%-2rem))] rounded-lg border border-line bg-background p-5 text-foreground backdrop:bg-black/50">
+    <dialog ref={ref} aria-labelledby="signin-title" className="m-auto w-[min(26rem,calc(100%-2rem))] rounded-2xl border border-line bg-surface p-6 text-foreground shadow-2xl backdrop:bg-black/60 backdrop:backdrop-blur-sm">
       <h2 id="signin-title" className="text-lg font-semibold">Sign in to EdgeOS</h2>
       <p className="mt-1 text-sm text-muted">Signing in gives you a free daily allowance of questions in the ask box.</p>
-      <button type="button" onClick={google} className="mt-4 w-full rounded-lg border border-line px-4 py-2 text-sm font-medium hover:bg-panel">
+      <button type="button" onClick={google} className="mt-5 w-full rounded-xl border border-line px-4 py-2.5 text-sm font-medium hover:bg-surface-2">
         Continue with Google
       </button>
       <form onSubmit={emailLink} className="mt-4 space-y-2">
@@ -97,9 +98,9 @@ function SignInDialog({ ref }: { ref: React.RefObject<HTMLDialogElement | null> 
           autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full rounded border border-line bg-background px-3 py-2 text-sm"
+          className="w-full rounded-xl border border-line bg-background px-3 py-2.5 text-sm"
         />
-        <button type="submit" className="w-full rounded-lg bg-accent px-4 py-2 text-sm font-medium text-background">Email me a link</button>
+        <button type="submit" className="w-full rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-white">Email me a link</button>
       </form>
       {status && <p role="status" className="mt-3 text-sm">{status}</p>}
       <button type="button" onClick={close} className="mt-4 text-sm text-muted hover:text-foreground">Close</button>
@@ -113,17 +114,18 @@ export function AccountMenu() {
   if (!configured || !ready) return null;
   if (!user) {
     return (
-      <button type="button" onClick={openSignIn} className="text-muted hover:text-foreground">
+      <button type="button" onClick={openSignIn} className="ml-1 rounded-full bg-accent px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90">
         Sign in
       </button>
     );
   }
   return (
-    <span className="flex items-center gap-2">
-      <Link href="/account" className="text-muted hover:text-foreground" title={user.email ?? undefined}>
-        Account
+    <span className="ml-1 flex items-center gap-1">
+      <Link href="/account" aria-label="Your account" title={user.email ?? undefined}
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-2 text-foreground hover:bg-accent-soft">
+        <Icon name="user" />
       </Link>
-      <button type="button" onClick={() => signOut(firebaseAuth()!)} className="text-muted hover:text-foreground">
+      <button type="button" onClick={() => signOut(firebaseAuth()!)} className="rounded-full px-3 py-2 text-muted hover:bg-surface-2 hover:text-foreground">
         Sign out
       </button>
     </span>

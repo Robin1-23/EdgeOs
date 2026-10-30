@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 import { AccountMenu, AuthProvider } from "@/components/Auth";
+import { Logo } from "@/components/Icons";
 import { DISCLAIMER } from "@/components/Notices";
 import "./globals.css";
 
@@ -13,36 +14,52 @@ export const metadata: Metadata = {
   description: "Descriptive research on NSE-listed companies and Indian mutual funds: every number with its formula and source.",
 };
 
+const NAV = [
+  { href: "/ask", label: "Ask" },
+  { href: "/tools/overlap", label: "Fund overlap" },
+  { href: "/pricing", label: "Plans" },
+];
+
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased font-sans min-h-screen flex flex-col`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased font-sans min-h-dvh flex flex-col`}>
         <AuthProvider>
-        <header className="border-b border-line">
-          <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between">
-            <Link href="/" className="font-semibold tracking-tight text-lg">
-              EdgeOS
-            </Link>
-            <nav className="flex items-center gap-4 text-sm">
-              <Link href="/ask" className="text-muted hover:text-foreground">
-                Ask
+          <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-surface focus:px-3 focus:py-2">
+            Skip to content
+          </a>
+          <header className="sticky top-0 z-30 border-b border-line/70 bg-background/75 backdrop-blur-xl">
+            <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
+              <Link href="/" className="flex items-center gap-2.5 font-semibold tracking-tight">
+                <Logo />
+                <span className="text-lg">EdgeOS</span>
               </Link>
-              <Link href="/tools/overlap" className="text-muted hover:text-foreground">
-                Fund overlap
-              </Link>
-              <AccountMenu />
-            </nav>
-          </div>
-        </header>
-        <main className="flex-1 mx-auto w-full max-w-6xl px-4 py-6">{children}</main>
-        <footer className="border-t border-line">
-          <div className="mx-auto max-w-6xl space-y-2 px-4 py-4 text-xs text-muted leading-relaxed">
-            <p>{DISCLAIMER}</p>
-            <p>
-              <Link href="/pricing" className="underline underline-offset-4 hover:text-foreground">Plans</Link>
-            </p>
-          </div>
-        </footer>
+              <nav className="flex items-center gap-1 text-sm">
+                {NAV.map((n) => (
+                  <Link
+                    key={n.href}
+                    href={n.href}
+                    className={`rounded-full px-3 py-2 text-muted transition-colors hover:bg-surface-2 hover:text-foreground ${n.href === "/pricing" ? "hidden sm:block" : ""}`}
+                  >
+                    {n.label}
+                  </Link>
+                ))}
+                <AccountMenu />
+              </nav>
+            </div>
+          </header>
+          <main id="main" className="page-glow flex-1">
+            <div className="mx-auto w-full max-w-6xl px-4 pb-16 pt-8">{children}</div>
+          </main>
+          <footer className="border-t border-line">
+            <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-6 text-xs text-muted sm:flex-row sm:items-start sm:justify-between">
+              <p className="max-w-3xl leading-relaxed">{DISCLAIMER}</p>
+              <nav className="flex shrink-0 gap-4">
+                <Link href="/pricing" className="hover:text-foreground">Plans</Link>
+                <Link href="/account" className="hover:text-foreground">Account</Link>
+              </nav>
+            </div>
+          </footer>
         </AuthProvider>
       </body>
     </html>
