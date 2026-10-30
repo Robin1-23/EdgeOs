@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { AskBox } from "./AskBox";
 
 export const metadata: Metadata = {
@@ -16,7 +17,9 @@ export default function AskPage() {
           every sentence links to the number, formula and source behind it. It never recommends what to buy or sell.
         </p>
       </header>
-      <AskBox />
+      <Suspense>
+        <AskBox />
+      </Suspense>
     </div>
   );
 }

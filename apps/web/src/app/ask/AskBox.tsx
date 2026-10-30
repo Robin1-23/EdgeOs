@@ -1,5 +1,6 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/components/Auth";
 import { AGENT_TITLES, AgentSection, CitedList, citeLabels } from "@/components/Evidence";
@@ -41,6 +42,7 @@ export function AskBox() {
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState<string | null>(null);
   const abort = useRef<AbortController | null>(null);
+  const reopenId = useSearchParams().get("id");
 
   useEffect(() => {
     if (!user) return setQuota(null);
@@ -51,6 +53,21 @@ export function AskBox() {
       .then(setQuota)
       .catch(() => setQuota(null));
   }, [user]);
+
+  // /ask?id=N re-opens one of the user's own past answers (from the account page)
+  useEffect(() => {
+    if (!user || !reopenId) return;
+    user
+      .getIdToken()
+      .then((t) => fetch(`/api/ask/${encodeURIComponent(reopenId)}`, { headers: { Authorization: `Bearer ${t}` } }))
+      .then(async (r) => {
+        const body = await r.json();
+        if (!r.ok) throw new Error(body.detail ?? "that question could not be opened");
+        setQuestion(body.question);
+        setResult({ ...body, remaining: 0 } as Result);
+      })
+      .catch((e: Error) => setError(e.message));
+  }, [user, reopenId]);
 
   useEffect(() => {
     if (!busy) return;

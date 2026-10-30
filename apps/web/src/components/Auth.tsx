@@ -10,6 +10,7 @@ import {
   signOut,
   type User,
 } from "firebase/auth";
+import Link from "next/link";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { EMAIL_KEY, authConfigured, firebaseAuth } from "@/lib/firebase";
 
@@ -119,9 +120,9 @@ export function AccountMenu() {
   }
   return (
     <span className="flex items-center gap-2">
-      <span className="hidden max-w-[12rem] truncate text-xs text-muted sm:inline" title={user.email ?? undefined}>
-        {user.email ?? user.displayName}
-      </span>
+      <Link href="/account" className="text-muted hover:text-foreground" title={user.email ?? undefined}>
+        Account
+      </Link>
       <button type="button" onClick={() => signOut(firebaseAuth()!)} className="text-muted hover:text-foreground">
         Sign out
       </button>

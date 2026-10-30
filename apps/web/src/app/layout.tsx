@@ -36,7 +36,12 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         </header>
         <main className="flex-1 mx-auto w-full max-w-6xl px-4 py-6">{children}</main>
         <footer className="border-t border-line">
-          <p className="mx-auto max-w-6xl px-4 py-4 text-xs text-muted leading-relaxed">{DISCLAIMER}</p>
+          <div className="mx-auto max-w-6xl space-y-2 px-4 py-4 text-xs text-muted leading-relaxed">
+            <p>{DISCLAIMER}</p>
+            <p>
+              <Link href="/pricing" className="underline underline-offset-4 hover:text-foreground">Plans</Link>
+            </p>
+          </div>
         </footer>
         </AuthProvider>
       </body>

@@ -219,7 +219,7 @@ def fake_ask(db_conn, public_ok=True, agents=None, fail=False):
             self.agents = agents if agents is not None else {"M2 ACME": "ok"}
 
         def model_dump(self, mode):
-            return {"summary": [{"text": "answer", "cites": ["M2:roe"]}]}
+            return {"summary": [{"text": "answer", "cites": ["M2:roe"]}], "agents": self.agents}
 
     def ask(conn, question, as_of, connect):
         if fail:
@@ -243,8 +243,8 @@ def test_ask_needs_firebase_and_a_valid_token(client, monkeypatch, signed_in):
 
 def test_ask_answers_and_enforces_the_daily_quota(client, db_conn, monkeypatch, signed_in):
     monkeypatch.setattr(main.orchestrator, "ask", fake_ask(db_conn))
-    monkeypatch.setattr(main, "ASK_DAILY_LIMIT", 2)
-    assert client.get("/api/ask/quota", headers=signed_in).json() == {"limit": 2, "remaining": 2}
+    monkeypatch.setattr(main, "FREE_LIMIT", 2)
+    assert client.get("/api/ask/quota", headers=signed_in).json() == {"plan": "free", "limit": 2, "remaining": 2}
     r = client.post("/api/ask", json={"question": "How has ACME grown?"}, headers=signed_in)
     assert r.status_code == 200 and r.json()["answer"]["summary"][0]["text"] == "answer" and r.json()["remaining"] == 1
     assert r.headers["cache-control"] == "private, no-store"
@@ -260,7 +260,7 @@ def test_a_crashed_run_still_counts_against_the_quota(client, db_conn, monkeypat
     monkeypatch.setattr(main.orchestrator, "ask", fake_ask(db_conn, fail=True))
     with pytest.raises(RuntimeError, match="planner crashed"):
         client.post("/api/ask", json={"question": "How has ACME grown?"}, headers=signed_in)
-    assert client.get("/api/ask/quota", headers=signed_in).json()["remaining"] == main.ASK_DAILY_LIMIT - 1
+    assert client.get("/api/ask/quota", headers=signed_in).json()["remaining"] == main.FREE_LIMIT - 1
 
 
 def test_ask_returns_the_evidence_with_citation_prefixes(client, db_conn, monkeypatch, signed_in):

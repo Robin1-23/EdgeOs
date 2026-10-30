@@ -7,6 +7,7 @@ SERVE_DEV_DATA=1 lets a developer see dev_local data on their own machine: allow
 every affected response says "dev_only": true, and the API refuses to start with it in any other configuration.
 """
 
+import json
 import os
 from contextlib import asynccontextmanager
 from datetime import date, datetime, timedelta
@@ -14,7 +15,7 @@ from typing import Annotated
 from zoneinfo import ZoneInfo
 
 import psycopg
-from fastapi import Depends, FastAPI, HTTPException, Query, Response
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
@@ -24,12 +25,15 @@ from services.agents.desks.funds import mf1_xray
 from services.agents.desks.funds.categories import BENCHMARK, sebi_category
 from services.agents.mother import orchestrator, planner
 from services.agents.runlog import is_public
+from services.api import billing
 from services.api.auth import current_user
 
 IST = ZoneInfo("Asia/Kolkata")
 NOT_LICENSED = "not available under the current data licence"
 HOME_INDICES = ["Nifty 50", "Nifty Next 50", "Nifty Bank", "NIFTY Midcap 100", "NIFTY Smallcap 100", "India VIX"]
-ASK_DAILY_LIMIT = int(os.environ.get("ASK_DAILY_LIMIT", "20"))
+FREE_LIMIT = int(os.environ.get("ASK_FREE_LIMIT", "5"))  # ask-box questions per IST day
+PRO_LIMIT = int(os.environ.get("ASK_PRO_LIMIT", "50"))
+HISTORY_DAYS = {"free": 30, "pro": 365}
 CACHE_PUBLIC = "public, max-age=300"  # reports change once a night
 
 
@@ -45,6 +49,7 @@ def check_config() -> None:
 @asynccontextmanager
 async def lifespan(_app):
     check_config()
+    billing.config()  # refuses live Razorpay keys before the legal review
     yield
 
 
@@ -288,22 +293,42 @@ def _attempts_today(conn, uid: str) -> int:
     return conn.execute("SELECT count(*) FROM ask_attempts WHERE user_id = %s AND created_at >= %s", (uid, day_start)).fetchone()[0]
 
 
+def _plan(conn, uid: str) -> tuple[str, int]:
+    return ("pro", PRO_LIMIT) if billing.is_pro(conn, uid) else ("free", FREE_LIMIT)
+
+
+def _no_store(response: Response) -> None:
+    response.headers["Cache-Control"] = "private, no-store"
+
+
 @app.get("/api/ask/quota")
 def ask_quota(conn: Conn, uid: Annotated[str, Depends(current_user)], response: Response) -> dict:
-    response.headers["Cache-Control"] = "private, no-store"
-    return {"limit": ASK_DAILY_LIMIT, "remaining": max(0, ASK_DAILY_LIMIT - _attempts_today(conn, uid))}
+    _no_store(response)
+    plan, limit = _plan(conn, uid)
+    return {"plan": plan, "limit": limit, "remaining": max(0, limit - _attempts_today(conn, uid))}
+
+
+def _answer_body(conn, status: str, report: dict, public_ok: bool, as_of: date) -> dict:
+    """An answered question with its licence-gated evidence; citation ids carry "SUBJECT/AGENT" when several subjects."""
+    dev_only = gate(public_ok)
+    pairs = [k.split(" ", 1) for k in report.get("agents", {})]  # "M2 ACME" -> agent, subject
+    many = len({s for _, s in pairs}) > 1
+    evidence = [{"agent_id": a, "subject": s, "prefix": f"{s}/{a}" if many else a, **_agent_slot(conn, a, s, as_of)}
+                for a, s in pairs]
+    return {"status": status, "dev_only": dev_only, "answer": report, "evidence": evidence}
 
 
 @app.post("/api/ask")
 def ask(conn: Conn, req: AskRequest, uid: Annotated[str, Depends(current_user)], response: Response) -> dict:
-    """Signed-in users only, ASK_DAILY_LIMIT attempts per IST day; answered from verified agent evidence, which is
+    """Signed-in users only, a daily allowance of attempts by plan; answered from verified agent evidence, which is
     returned with the answer (licence-gated) so every citation can show its number, formula and source."""
-    response.headers["Cache-Control"] = "private, no-store"
+    _no_store(response)
+    plan, limit = _plan(conn, uid)
     used = _attempts_today(conn, uid)
-    if used >= ASK_DAILY_LIMIT:
-        raise HTTPException(429, f"daily limit of {ASK_DAILY_LIMIT} questions reached; it resets at midnight IST")
+    if used >= limit:
+        raise HTTPException(429, f"daily limit of {limit} questions on the {plan} plan reached; it resets at midnight IST")
     conn.execute("INSERT INTO ask_attempts (user_id) VALUES (%s)", (uid,))  # counted before the run: a crash still counts
-    remaining = ASK_DAILY_LIMIT - used - 1
+    remaining = limit - used - 1
 
     def connect():
         return psycopg.connect(DATABASE_URL, autocommit=True)
@@ -319,10 +344,105 @@ def ask(conn: Conn, req: AskRequest, uid: Annotated[str, Depends(current_user)],
     report = out["report"]
     if out["status"] == "blocked":
         return {"status": "blocked", "message": report.blocked_reason or "no answer could be shown", "remaining": remaining}
-    dev_only = gate(report.public_ok)
-    pairs = [k.split(" ", 1) for k in report.agents]  # "M2 ACME" -> agent, subject
-    many = len({s for _, s in pairs}) > 1  # evidence ids carry "subject/agent" when the answer covers several
-    evidence = [{"agent_id": a, "subject": s, "prefix": f"{s}/{a}" if many else a, **_agent_slot(conn, a, s, as_of)}
-                for a, s in pairs]
-    return {"status": out["status"], "dev_only": dev_only, "answer": report.model_dump(mode="json"),
-            "evidence": evidence, "remaining": remaining}
+    return {**_answer_body(conn, out["status"], report.model_dump(mode="json"), report.public_ok, as_of), "remaining": remaining}
+
+
+@app.get("/api/ask/{answer_id}")
+def ask_again(conn: Conn, answer_id: int, uid: Annotated[str, Depends(current_user)], response: Response) -> dict:
+    """Re-open one of the signed-in user's own past answers (anyone else's is 404)."""
+    _no_store(response)
+    row = conn.execute("SELECT question, as_of, status, answer, public_ok FROM ask_answers WHERE id = %s AND user_id = %s",
+                       (answer_id, uid)).fetchone()
+    if row is None:
+        raise HTTPException(404, "no such question in your history")
+    question, as_of, status, answer, public_ok = row
+    answer = answer or {}
+    if status != "answered":
+        message = answer.get("message") or answer.get("blocked_reason") or "no answer could be shown"
+        if message.startswith(planner.PLAN_FAILED):
+            status, message = "failed", "The research service could not work on this question at the time."
+        return {"question": question, "status": status, "message": message}
+    return {"question": question, **_answer_body(conn, status, answer, public_ok, as_of)}
+
+
+# --- account and billing --------------------------------------------------------------------------------
+
+@app.get("/api/account")
+def account(conn: Conn, uid: Annotated[str, Depends(current_user)], response: Response) -> dict:
+    """Plan, today's allowance, the subscription and the user's question history (30 days free, 12 months Pro)."""
+    _no_store(response)
+    plan, limit = _plan(conn, uid)
+    used = _attempts_today(conn, uid)
+    history = conn.execute(
+        "SELECT id, question, status, created_at, coalesce(answer->>'message', '') LIKE %s FROM ask_answers WHERE user_id = %s"
+        " AND created_at >= now() - make_interval(days => %s) ORDER BY created_at DESC LIMIT 200",
+        (planner.PLAN_FAILED + "%", uid, HISTORY_DAYS[plan])).fetchall()
+    try:
+        billing_on = billing.config() is not None
+    except billing.BillingError:
+        billing_on = False
+    return {"plan": plan, "limit": limit, "used_today": used, "remaining": max(0, limit - used),
+            "history_days": HISTORY_DAYS[plan], "subscription": billing.current(conn, uid), "billing_available": billing_on,
+            "history": [{"id": i, "question": q, "status": "failed" if failed else st, "asked_at": at}
+                        for i, q, st, at, failed in history]}
+
+
+PAYMENT_UNAVAILABLE = "the payment service could not complete this right now; nothing was charged. Please try again later."
+
+
+def _billing_config() -> dict:
+    try:
+        cfg = billing.config()
+    except billing.BillingError as e:
+        raise HTTPException(503, str(e)) from e
+    if cfg is None:
+        raise HTTPException(503, "billing is not configured")
+    return cfg
+
+
+@app.post("/api/billing/subscribe")
+def subscribe(conn: Conn, uid: Annotated[str, Depends(current_user)], response: Response) -> dict:
+    """Start a Pro subscription: returns what Razorpay's checkout needs to collect the mandate in the browser."""
+    _no_store(response)
+    cfg = _billing_config()
+    if billing.is_pro(conn, uid):
+        raise HTTPException(409, "you are already on Pro")
+    try:
+        return billing.subscribe(conn, cfg, uid)
+    except billing.BillingError as e:  # details stay in the server log, not on the page
+        raise HTTPException(502, PAYMENT_UNAVAILABLE) from e
+
+
+@app.post("/api/billing/cancel")
+def cancel_subscription(conn: Conn, uid: Annotated[str, Depends(current_user)]) -> dict:
+    cfg = _billing_config()
+    try:
+        billing.cancel(conn, cfg, uid)
+    except billing.BillingError as e:
+        if "no subscription" in str(e):
+            raise HTTPException(409, str(e)) from e
+        raise HTTPException(502, PAYMENT_UNAVAILABLE) from e
+    return {"subscription": billing.current(conn, uid)}
+
+
+@app.post("/api/billing/webhook")
+async def billing_webhook(request: Request, conn: Conn, x_razorpay_signature: Annotated[str | None, Header()] = None,
+                          x_razorpay_event_id: Annotated[str | None, Header()] = None) -> dict:
+    """Razorpay subscription events. Only signed deliveries are applied; repeats and stale events are ignored."""
+    cfg = _billing_config()
+    body = await request.body()
+    if not billing.verify_signature(body, x_razorpay_signature or "", cfg["webhook_secret"]):
+        raise HTTPException(400, "bad signature")
+    return {"result": billing.apply_webhook(conn, x_razorpay_event_id or "", json.loads(body))}
+
+
+@app.delete("/api/account")
+def delete_account(conn: Conn, uid: Annotated[str, Depends(current_user)]) -> dict:
+    """Delete the user's questions and answers. A running Pro subscription must be cancelled first. Subscription and
+    payment records are kept for tax and accounting (a legal obligation); the browser then deletes the Firebase user."""
+    sub = billing.current(conn, uid)
+    if billing.is_pro(conn, uid) and not (sub or {}).get("cancel_at_period_end"):
+        raise HTTPException(409, "cancel your Pro subscription before deleting your account")
+    answers = conn.execute("DELETE FROM ask_answers WHERE user_id = %s", (uid,)).rowcount
+    attempts = conn.execute("DELETE FROM ask_attempts WHERE user_id = %s", (uid,)).rowcount
+    return {"deleted": {"answers": answers, "attempts": attempts}}
