@@ -37,14 +37,14 @@ export default async function HomePage() {
             Research for NSE stocks and Indian mutual funds
           </p>
         )}
-        <h1 className="max-w-4xl text-5xl font-semibold leading-[1.02] sm:text-7xl lg:text-[5.5rem]">
+        <h1 className="rise max-w-4xl text-5xl font-semibold leading-[1.02] sm:text-7xl lg:text-[5.5rem]">
           Research without
           <span className="block text-muted/80">the noise.</span>
         </h1>
-        <p className="mt-6 max-w-xl text-base text-muted sm:text-lg">
+        <p className="rise mt-6 max-w-xl text-base text-muted sm:text-lg" style={{ "--d": "120ms" } as React.CSSProperties}>
           Specialist agents read the filings, prices and fund portfolios. You get the facts, each with its source.
         </p>
-        <div id="search" className="mt-10 w-full max-w-2xl">
+        <div id="search" className="rise mt-10 w-full max-w-2xl" style={{ "--d": "220ms" } as React.CSSProperties}>
           <SearchBox />
         </div>
         <ul className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs">
@@ -59,7 +59,11 @@ export default async function HomePage() {
         </ul>
       </section>
 
-      {data && data.indices.length > 0 && <MarketPreview home={data} />}
+      {data && data.indices.length > 0 && (
+        <div className="rise" style={{ "--d": "340ms" } as React.CSSProperties}>
+          <MarketPreview home={data} />
+        </div>
+      )}
 
       <section aria-label="EdgeOS in numbers" className="grid grid-cols-2 gap-px overflow-hidden rounded-[1.25rem] border border-line bg-line md:grid-cols-4">
         {STATS.map((s) => (
@@ -79,7 +83,7 @@ export default async function HomePage() {
         </div>
         <div className="grid gap-4 md:grid-cols-3">
           {FEATURES.map((f) => (
-            <Link key={f.title} href={f.href} className="card group flex flex-col p-7 transition-colors hover:border-accent/30">
+            <Link key={f.title} href={f.href} className="card card-hover group flex flex-col p-7">
               <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-accent-soft text-accent ring-1 ring-accent/20">
                 <Icon name={f.icon} className="h-5 w-5" />
               </span>

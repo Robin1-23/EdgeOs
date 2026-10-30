@@ -39,7 +39,7 @@ export default function PricingPage() {
         {PLANS.map((p) => (
           <li
             key={p.name}
-            className={`card relative flex flex-col p-8 ${p.featured ? "border-accent/50 shadow-[0_0_0_1px_rgba(198,241,53,0.5),0_30px_80px_-30px_rgba(198,241,53,0.35)]" : ""}`}
+            className={`card relative flex flex-col p-8 ${p.featured ? "border-accent/50 shadow-[0_0_0_1px_rgb(var(--accent-rgb)/0.5),0_30px_80px_-30px_rgb(var(--accent-rgb)/0.35)]" : ""}`}
           >
             {p.featured && (
               <span className="absolute -top-3 left-7 rounded-full bg-accent px-3 py-1 text-xs font-medium text-accent-ink">Most useful</span>

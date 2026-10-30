@@ -14,6 +14,9 @@ const PATHS: Record<string, string[]> = {
   alert: ["M12 9v4", "M12 17h.01", "M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"],
   user: ["M20 21a8 8 0 1 0-16 0", "M12 13a5 5 0 1 0 0-10 5 5 0 0 0 0 10z"],
   x: ["M18 6 6 18", "M6 6l12 12"],
+  shield: ["M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"],
+  scale: ["M12 3v18", "M5 7h14", "M5 7l-3 6a3 3 0 0 0 6 0z", "M19 7l-3 6a3 3 0 0 0 6 0z", "M8 21h8"],
+  users: ["M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2", "M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z", "M22 21v-2a4 4 0 0 0-3-3.9", "M16 3.1a4 4 0 0 1 0 7.8"],
 };
 
 export type IconName = keyof typeof PATHS;
@@ -28,13 +31,13 @@ export function Icon({ name, className = "h-4 w-4" }: { name: IconName; classNam
   );
 }
 
-/** The EdgeOS mark: a rising edge in a lime tile. */
+/** The EdgeOS mark: a rising edge in an accent-coloured tile. */
 export function Logo({ className = "h-7 w-7" }: { className?: string }) {
   return (
     <svg viewBox="0 0 32 32" className={className} aria-hidden>
-      <rect width="32" height="32" rx="8" fill="#c6f135" />
-      <path d="M7.5 21.5l5.2-5.2 3.6 3.6L24.5 11.7" fill="none" stroke="#0b0f02" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx="24.5" cy="11.7" r="2.2" fill="#0b0f02" />
+      <rect width="32" height="32" rx="8" fill="var(--accent)" />
+      <path d="M7.5 21.5l5.2-5.2 3.6 3.6L24.5 11.7" fill="none" stroke="var(--accent-ink)" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="24.5" cy="11.7" r="2.2" fill="var(--accent-ink)" />
     </svg>
   );
 }

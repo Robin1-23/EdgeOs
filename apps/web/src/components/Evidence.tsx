@@ -93,7 +93,7 @@ export function AgentSection({ envelope: e, prefix = e.agent_id }: { envelope: E
           {e.metrics.map((m) => {
             const src = sources.get(m.source_query_id);
             return (
-              <li key={m.id} id={anchorId(`${prefix}:${m.id}`)} className="relative rounded-2xl border border-line bg-white/[0.02] px-4 py-3.5 transition-colors hover:border-white/15">
+              <li key={m.id} id={anchorId(`${prefix}:${m.id}`)} className="card-hover relative rounded-2xl border border-line bg-white/[0.02] px-4 py-3.5">
                 <div className="flex items-start justify-between gap-2">
                   <span className="text-xs leading-snug text-muted">{m.name}</span>
                   <details className="relative shrink-0">

@@ -9,14 +9,26 @@
   --foreground: #f1f4ec;
   --muted: #8a9286;
   --line: rgba(255, 255, 255, 0.075);
-  --accent: #c6f135;
+  --accent-rgb: 198 241 53;
+  --accent: rgb(var(--accent-rgb));
   --accent-ink: #0b0f02;
-  --accent-soft: rgba(198, 241, 53, 0.1);
+  --accent-soft: rgb(var(--accent-rgb) / 0.1);
   --up: #a3e635;
   --down: #ff5f6d;
   --watch: #f5b83d;
   --alert: #ff5f6d;
-  --glow: rgba(198, 241, 53, 0.14);
+  --glow: rgb(var(--accent-rgb) / 0.14);
+}
+
+/* the gold theme (header switch): warm amber accent, green and red keep their meaning */
+:root[data-accent="gold"] {
+  --accent-rgb: 242 190 72;
+  --accent-ink: #140d00;
+  --up: #3ddc84;
+  --background: #070605;
+  --surface: #0e0c09;
+  --surface-2: #16130e;
+  --muted: #958c7d;
 }
 
 @theme inline {
@@ -93,12 +105,12 @@ h1, h2, h3, .font-display {
   background: var(--accent);
   color: var(--accent-ink);
   font-weight: 600;
-  box-shadow: 0 0 0 1px rgba(198, 241, 53, 0.4), 0 8px 30px -8px rgba(198, 241, 53, 0.45);
+  box-shadow: 0 0 0 1px rgb(var(--accent-rgb) / 0.4), 0 8px 30px -8px rgb(var(--accent-rgb) / 0.45);
   transition: transform 150ms ease, box-shadow 150ms ease, opacity 150ms ease;
 }
 .btn-primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 0 0 1px rgba(198, 241, 53, 0.6), 0 12px 36px -8px rgba(198, 241, 53, 0.55);
+  box-shadow: 0 0 0 1px rgb(var(--accent-rgb) / 0.6), 0 12px 36px -8px rgb(var(--accent-rgb) / 0.55);
 }
 .btn-primary:disabled {
   opacity: 0.35;
@@ -139,7 +151,33 @@ h1, h2, h3, .font-display {
 }
 
 ::selection {
-  background: rgba(198, 241, 53, 0.3);
+  background: rgb(var(--accent-rgb) / 0.3);
+}
+
+/* entrance: blocks rise in gently, staggered with style="--d: 120ms" */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.rise {
+  animation: rise 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation-delay: var(--d, 0ms);
+}
+
+/* clickable cards glow softly in the accent colour on hover */
+.card-hover {
+  transition: border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease;
+}
+.card-hover:hover {
+  border-color: rgb(var(--accent-rgb) / 0.35);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 24px 70px -36px rgb(var(--accent-rgb) / 0.55);
+  transform: translateY(-2px);
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { citeLabels } from "@/components/Evidence";
 import { DevBanner, EmptyState } from "@/components/Notices";
 import { PriceChart } from "@/components/PriceChart";
+import { AtAGlance } from "@/components/Visuals";
 import {
   AgentSections, AskCta, BothSides, ConfidenceBadge, KeyNumbers, OpenQuestions, QuoteCard, ReportGaps, SummaryCard,
 } from "@/components/ReportBody";
@@ -48,7 +49,7 @@ export default async function StockPageView({ params }: Props) {
   return (
     <article className="space-y-6">
       <DevBanner show={dev_only} />
-      <header className="flex flex-wrap items-end justify-between gap-6 pb-2">
+      <header className="rise flex flex-wrap items-end justify-between gap-6 pb-2">
         <div className="space-y-4">
           <div className="flex flex-wrap items-center gap-2 text-xs">
             <span className="rounded-full bg-accent-soft px-2.5 py-1 font-mono font-medium text-accent">NSE · {subject}</span>
@@ -61,9 +62,10 @@ export default async function StockPageView({ params }: Props) {
         {page.data.quote && <QuoteCard quote={page.data.quote} />}
       </header>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+      <div className="rise grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]" style={{ "--d": "120ms" } as React.CSSProperties}>
         <div className="min-w-0 space-y-6">
           <PriceChart symbol={subject} asOf={as_of} />
+          <AtAGlance agents={agents} />
           <SummaryCard report={report} labels={labels} />
           <BothSides report={report} labels={labels} />
         </div>

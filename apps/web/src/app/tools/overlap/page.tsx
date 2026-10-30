@@ -13,7 +13,7 @@ export default async function OverlapPage({ searchParams }: Props) {
   const { f } = await searchParams;
   const codes = (f ?? "").split(",").filter((c) => /^\d+$/.test(c)).slice(0, 20);
   return (
-    <div className="mx-auto max-w-3xl space-y-8 pt-6 sm:pt-10">
+    <div className="mx-auto max-w-2xl space-y-10 pt-6 sm:pt-10">
       <header className="text-center">
         <span className="mx-auto mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-accent-soft text-accent ring-1 ring-accent/20">
           <Icon name="layers" className="h-6 w-6" />

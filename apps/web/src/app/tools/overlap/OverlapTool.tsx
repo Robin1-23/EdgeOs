@@ -104,11 +104,26 @@ export function OverlapTool({ initialCodes }: { initialCodes: string[] }) {
           type="button"
           disabled={rows.length < 2 || busy}
           onClick={compare}
-          className="btn-primary w-full px-4 py-3.5 text-sm"
+          className={`w-full px-4 py-3.5 text-sm ${rows.length < 2 ? "btn-ghost cursor-not-allowed text-muted" : "btn-primary"}`}
         >
           {busy ? "Comparing…" : rows.length < 2 ? "Pick at least two funds" : `Compare ${rows.length} funds`}
         </button>
         {rows.length > 0 && <p className="text-center text-xs text-muted">Amounts are optional and never go in the page link.</p>}
+        {rows.length === 0 && (
+          <ol className="grid gap-3 pt-4 sm:grid-cols-3">
+            {[
+              ["Add funds", "Search by name or AMFI code."],
+              ["Add amounts", "Optional: see your combined exposure."],
+              ["Compare", "Overlap, common stocks and costs."],
+            ].map(([t, d], i) => (
+              <li key={t} className="card p-4 text-left">
+                <span className="font-mono text-xs text-accent">0{i + 1}</span>
+                <p className="mt-2 text-sm font-medium">{t}</p>
+                <p className="mt-1 text-xs text-muted">{d}</p>
+              </li>
+            ))}
+          </ol>
+        )}
         {error && <p role="alert" className="text-sm text-alert">Could not compare: {error}</p>}
       </section>
 

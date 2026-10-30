@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { AgentTabs } from "@/components/AgentTabs";
+import { CountUp } from "@/components/CountUp";
 import { CitedList } from "@/components/Evidence";
 import { Icon, type IconName } from "@/components/Icons";
-import { anchorId, formatChange, formatDate, formatValue } from "@/lib/format";
+import { anchorId, formatChange, formatDate } from "@/lib/format";
 import type { AgentSlot, Quote, Report, ReportItem } from "@/lib/types";
 
 /** "Close: Rs 1,001.20" -> ["Close", "₹1,001.20"]: the agents' own formatted text, split for display. */
@@ -41,7 +42,7 @@ export function QuoteCard({ quote }: { quote: Quote }) {
     <div className="card min-w-[16rem] px-6 py-5" title={quote.formula}>
       <p className="text-xs text-muted">Last close · {formatDate(quote.date)}</p>
       <p className="mt-2 flex items-baseline gap-3">
-        <span className="font-display text-4xl font-semibold tabular-nums tracking-tight">{formatValue(quote.close, "INR")}</span>
+        <CountUp value={quote.close} unit="INR" className="font-display text-4xl font-semibold tabular-nums tracking-tight" />
         {quote.change !== null && (
           <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-mono text-xs tabular-nums ${up ? "bg-up/10 text-up" : "bg-down/10 text-down"}`}>
             <Icon name={up ? "up" : "down"} className="h-3 w-3" />

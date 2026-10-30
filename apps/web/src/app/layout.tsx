@@ -4,6 +4,7 @@ import Link from "next/link";
 import { AccountMenu, AuthProvider } from "@/components/Auth";
 import { Logo } from "@/components/Icons";
 import { DISCLAIMER } from "@/components/Notices";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import "./globals.css";
 
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
@@ -23,7 +24,11 @@ const NAV = [
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* apply a saved accent before the first paint, so a gold page never flashes lime */}
+        <script dangerouslySetInnerHTML={{ __html: "try{if(localStorage.getItem('edgeos.accent')==='gold')document.documentElement.dataset.accent='gold'}catch(e){}" }} />
+      </head>
       <body className={`${inter.variable} ${spaceGrotesk.variable} ${geistMono.variable} antialiased font-sans min-h-dvh flex flex-col`}>
         <AuthProvider>
           <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-surface focus:px-3 focus:py-2">
@@ -43,6 +48,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                 ))}
               </nav>
               <div className="flex items-center justify-end gap-2 text-sm">
+                <ThemeToggle />
                 <AccountMenu />
                 <Link href="/ask" className="btn-primary px-4 py-2 text-sm">Ask EdgeOS</Link>
               </div>

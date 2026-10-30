@@ -98,7 +98,7 @@ export default async function FundPageView({ params }: Props) {
         </Link>
       </header>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+      <div className="rise grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]" style={{ "--d": "120ms" } as React.CSSProperties}>
         <div className="min-w-0 space-y-6">
           <FundChart code={subject} asOf={as_of} />
           <SummaryCard report={report} labels={citeLabels(envelopes)} />

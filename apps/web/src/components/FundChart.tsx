@@ -1,8 +1,9 @@
 "use client";
 
-import { ColorType, createChart, LineSeries, LineStyle } from "lightweight-charts";
+import { ColorType, createChart, LineSeries, LineStyle, LineType } from "lightweight-charts";
 import { useEffect, useRef, useState } from "react";
 import { formatDate, monthsBefore } from "@/lib/format";
+import { useAccent } from "@/lib/theme";
 import type { FundSeries } from "@/lib/types";
 
 const RANGES = [
@@ -19,6 +20,7 @@ function css(name: string) {
 /** Fund NAV against its category benchmark, both rebased to 100 by the API, up to the report date. */
 export function FundChart({ code, asOf }: { code: string; asOf: string }) {
   const box = useRef<HTMLDivElement>(null);
+  const accentName = useAccent();
   const [months, setMonths] = useState(36);
   const [series, setSeries] = useState<FundSeries | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -45,15 +47,15 @@ export function FundChart({ code, asOf }: { code: string; asOf: string }) {
       rightPriceScale: { borderVisible: false },
       timeScale: { borderVisible: false },
     });
-    chart.addSeries(LineSeries, { color: css("--accent"), lineWidth: 2, title: "Fund" })
+    chart.addSeries(LineSeries, { color: css("--accent"), lineWidth: 2, lineType: LineType.Curved, title: "Fund" })
       .setData(series.fund.map((p) => ({ time: p.date, value: p.value })));
     if (series.benchmark) {
-      chart.addSeries(LineSeries, { color: css("--muted"), lineWidth: 1, title: series.benchmark.name })
+      chart.addSeries(LineSeries, { color: css("--muted"), lineWidth: 1, lineType: LineType.Curved, lineStyle: LineStyle.Dashed, title: series.benchmark.name })
         .setData(series.benchmark.points.map((p) => ({ time: p.date, value: p.value })));
     }
     chart.timeScale().fitContent();
     return () => chart.remove();
-  }, [series]);
+  }, [series, accentName]);
 
   return (
     <section aria-labelledby="nav-chart-title" className="card p-6">

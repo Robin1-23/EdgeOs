@@ -1,10 +1,12 @@
 "use client";
 
-import { AreaSeries, ColorType, createChart, LineStyle } from "lightweight-charts";
+import { AreaSeries, ColorType, createChart, LineStyle, LineType } from "lightweight-charts";
 import { useEffect, useRef, useState } from "react";
+import { CountUp } from "@/components/CountUp";
 import { Icon } from "@/components/Icons";
 import { Sparkline } from "@/components/Sparkline";
 import { formatChange, formatDate, formatValue, monthsBefore } from "@/lib/format";
+import { cssRgba, useAccent } from "@/lib/theme";
 import type { Home } from "@/lib/types";
 
 const RANGES = [
@@ -24,6 +26,7 @@ export function MarketPreview({ home }: { home: Home }) {
   const [months, setMonths] = useState(12);
   const [points, setPoints] = useState<{ date: string; close: number }[] | null>(null);
   const box = useRef<HTMLDivElement>(null);
+  const accentName = useAccent();
   const selected = home.indices.find((i) => i.name === name);
   const asOf = selected?.date;
 
@@ -46,16 +49,20 @@ export function MarketPreview({ home }: { home: Home }) {
       grid: { vertLines: { visible: false }, horzLines: { color: "rgba(255,255,255,0.05)", style: LineStyle.Dashed } },
       rightPriceScale: { borderVisible: false },
       timeScale: { borderVisible: false },
-      crosshair: { vertLine: { color: "rgba(198,241,53,0.4)" }, horzLine: { color: "rgba(198,241,53,0.4)" } },
+      crosshair: { vertLine: { color: cssRgba("--accent-rgb", 0.4) }, horzLine: { color: cssRgba("--accent-rgb", 0.4) } },
       handleScroll: false,
       handleScale: false,
     });
     chart
-      .addSeries(AreaSeries, { lineColor: accent, lineWidth: 2, topColor: "rgba(198,241,53,0.28)", bottomColor: "rgba(198,241,53,0)", priceLineVisible: false })
+      .addSeries(AreaSeries, {
+        lineColor: accent, lineWidth: 2, lineType: LineType.Curved, priceLineVisible: false,
+        topColor: cssRgba("--accent-rgb", 0.3), bottomColor: cssRgba("--accent-rgb", 0),
+        crosshairMarkerBackgroundColor: accent, crosshairMarkerBorderColor: "#000",
+      })
       .setData(points.map((p) => ({ time: p.date, value: p.close })));
     chart.timeScale().fitContent();
     return () => chart.remove();
-  }, [points]);
+  }, [points, accentName]);
 
   if (!selected) return null;
   const up = (selected.change ?? 0) >= 0;
@@ -72,7 +79,7 @@ export function MarketPreview({ home }: { home: Home }) {
               <span className="text-xs">· close {formatDate(selected.date)}</span>
             </h2>
             <p className="mt-3 flex flex-wrap items-baseline gap-3">
-              <span className="font-display text-4xl font-semibold tabular-nums tracking-tight sm:text-5xl">{formatValue(selected.close, null)}</span>
+              <CountUp value={selected.close} unit={null} className="font-display text-4xl font-semibold tabular-nums tracking-tight sm:text-5xl" />
               {selected.change !== null && (
                 <span className={`rounded-full px-2.5 py-1 font-mono text-sm tabular-nums ${up ? "bg-up/10 text-up" : "bg-down/10 text-down"}`}>
                   {formatChange(selected.change)}
@@ -95,6 +102,9 @@ export function MarketPreview({ home }: { home: Home }) {
           </div>
         </div>
         <div ref={box} className="mt-6 h-64 w-full sm:h-72" role="img" aria-label={`${selected.name} closing levels`} />
+        {points && points.length > 0 && points.length < 20 && (
+          <p className="mt-2 text-xs text-muted">Only {points.length} closes in this range in the current data set.</p>
+        )}
         {b && (
           <div className="mt-5" title={b.formula}>
             <div className="flex justify-between text-xs">

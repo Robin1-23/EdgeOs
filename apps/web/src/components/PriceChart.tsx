@@ -3,6 +3,7 @@
 import { CandlestickSeries, ColorType, createChart, HistogramSeries, LineStyle } from "lightweight-charts";
 import { useEffect, useRef, useState } from "react";
 import { formatDate, monthsBefore } from "@/lib/format";
+import { useAccent } from "@/lib/theme";
 import type { Bar } from "@/lib/types";
 
 const RANGES = [
@@ -19,6 +20,7 @@ function css(name: string) {
 /** Daily NSE candles and volume up to the report date. Prices are as traded (not adjusted for splits or bonuses). */
 export function PriceChart({ symbol, asOf }: { symbol: string; asOf: string }) {
   const box = useRef<HTMLDivElement>(null);
+  const accentName = useAccent();
   const [months, setMonths] = useState(12);
   const [bars, setBars] = useState<Bar[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -55,7 +57,7 @@ export function PriceChart({ symbol, asOf }: { symbol: string; asOf: string }) {
     volume.setData(bars.map((b) => ({ time: b.date, value: b.volume, color: b.close >= b.open ? `${up}66` : `${down}66` })));
     chart.timeScale().fitContent();
     return () => chart.remove();
-  }, [bars]);
+  }, [bars, accentName]);
 
   return (
     <section aria-labelledby="chart-title" className="card p-6">
