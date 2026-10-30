@@ -22,6 +22,7 @@ from services.agents.llm.client import LLMError, call_json
 from services.agents.runlog import is_public
 
 MAX_SUBJECTS = 5
+PLAN_FAILED = "could not plan the question"  # the planner LLM call failed; callers tell it apart by this prefix
 AgentIdLit = Literal["M1", "M2", "M3", "M4", "M5", "M6", "M7", "MF1", "MF2", "MF3"]
 UNSUPPORTED_MESSAGE = ("This question is outside what EdgeOS covers today: research on NSE-listed stocks and Indian "
                        "mutual fund schemes. Personal portfolios, F&O and family finances are not covered yet.")
@@ -141,7 +142,7 @@ def ask_plan(conn: psycopg.Connection, question: str, as_of: date) -> Plan:
     try:
         intent = call_json("strong", ASK_SYSTEM, question, AskIntent).value
     except LLMError as e:
-        return Plan(status="needs_clarification", message=f"could not plan the question: {e}")
+        return Plan(status="needs_clarification", message=f"{PLAN_FAILED}: {e}")
     if intent.intent == "unsupported":
         return Plan(status="unsupported", message=UNSUPPORTED_MESSAGE, intent=intent.intent)
     kind = "stock" if intent.intent == "stock_research" else "fund"

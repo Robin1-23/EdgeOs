@@ -161,6 +161,17 @@ META_SQL = {
 META_COLS = {"stock": ("name", "isin", "symbol", "sector", "industry"), "fund": ("name", "amc", "category", "plan", "option")}
 
 
+def _agent_slot(conn, agent_id: str, subject: str, as_of: date) -> dict:
+    """The agent output a report used (latest ok run within freshness), licence-gated, metrics with formulas."""
+    run_id = planner.cached_run(conn, agent_id, subject, as_of, registry.AGENTS[agent_id].freshness_days)
+    out = conn.execute("SELECT envelope, public_ok FROM agent_outputs WHERE run_id = %s", (run_id,)).fetchone() if run_id else None
+    if out is None:
+        return {"available": False, "reason": "no result for this date"}
+    if not out[1] and not dev_mode():
+        return {"available": False, "reason": NOT_LICENSED}
+    return {"available": True, "envelope": with_formulas(out[0])}
+
+
 def _page(conn, kind: str, key: str, response: Response) -> dict:
     row = conn.execute("SELECT as_of, public_ok, report FROM reports WHERE subject = %s AND status = 'published'"
                        " ORDER BY as_of DESC LIMIT 1", (f"{kind}:{key}",)).fetchone()
@@ -168,16 +179,7 @@ def _page(conn, kind: str, key: str, response: Response) -> dict:
         raise HTTPException(404, f"no published report for {kind} {key} yet")
     as_of, public_ok, report = row
     dev_only = gate(public_ok, response)
-    agents = {}
-    for agent_id in registry.PAGE_AGENTS[kind]:
-        run_id = planner.cached_run(conn, agent_id, key, as_of, registry.AGENTS[agent_id].freshness_days)
-        out = conn.execute("SELECT envelope, public_ok FROM agent_outputs WHERE run_id = %s", (run_id,)).fetchone() if run_id else None
-        if out is None:
-            agents[agent_id] = {"available": False, "reason": "no result for this date"}
-        elif not out[1] and not dev_mode():
-            agents[agent_id] = {"available": False, "reason": NOT_LICENSED}
-        else:
-            agents[agent_id] = {"available": True, "envelope": with_formulas(out[0])}
+    agents = {agent_id: _agent_slot(conn, agent_id, key, as_of) for agent_id in registry.PAGE_AGENTS[kind]}
     meta = conn.execute(META_SQL[kind].format(visible_sql("m")), {"k": key}).fetchone()
     return {"dev_only": dev_only, "subject": key, "as_of": as_of, "report": report, "agents": agents,
             "meta": dict(zip(META_COLS[kind], meta)) if meta else None}
@@ -281,26 +283,46 @@ class AskRequest(BaseModel):
     question: str = Field(min_length=3, max_length=500)
 
 
-@app.post("/api/ask")
-def ask(conn: Conn, req: AskRequest, uid: Annotated[str, Depends(current_user)]) -> dict:
-    """Signed-in users only, ASK_DAILY_LIMIT questions per IST day; answered from verified agent evidence."""
+def _attempts_today(conn, uid: str) -> int:
     day_start = datetime.combine(datetime.now(IST).date(), datetime.min.time(), IST)
-    (used,) = conn.execute("SELECT count(*) FROM ask_answers WHERE user_id = %s AND created_at >= %s", (uid, day_start)).fetchone()
+    return conn.execute("SELECT count(*) FROM ask_attempts WHERE user_id = %s AND created_at >= %s", (uid, day_start)).fetchone()[0]
+
+
+@app.get("/api/ask/quota")
+def ask_quota(conn: Conn, uid: Annotated[str, Depends(current_user)], response: Response) -> dict:
+    response.headers["Cache-Control"] = "private, no-store"
+    return {"limit": ASK_DAILY_LIMIT, "remaining": max(0, ASK_DAILY_LIMIT - _attempts_today(conn, uid))}
+
+
+@app.post("/api/ask")
+def ask(conn: Conn, req: AskRequest, uid: Annotated[str, Depends(current_user)], response: Response) -> dict:
+    """Signed-in users only, ASK_DAILY_LIMIT attempts per IST day; answered from verified agent evidence, which is
+    returned with the answer (licence-gated) so every citation can show its number, formula and source."""
+    response.headers["Cache-Control"] = "private, no-store"
+    used = _attempts_today(conn, uid)
     if used >= ASK_DAILY_LIMIT:
         raise HTTPException(429, f"daily limit of {ASK_DAILY_LIMIT} questions reached; it resets at midnight IST")
+    conn.execute("INSERT INTO ask_attempts (user_id) VALUES (%s)", (uid,))  # counted before the run: a crash still counts
+    remaining = ASK_DAILY_LIMIT - used - 1
 
     def connect():
         return psycopg.connect(DATABASE_URL, autocommit=True)
 
-    # ponytail: the user is attached after the answer, so a run that crashes mid-way is not counted against the quota
-    out = orchestrator.ask(conn, req.question, datetime.now(IST).date(), connect)
+    as_of = datetime.now(IST).date()
+    out = orchestrator.ask(conn, req.question, as_of, connect)
     conn.execute("UPDATE ask_answers SET user_id = %s WHERE id = %s", (uid, out["id"]))
     if "report" not in out:
-        return {"status": out["status"], "message": out["message"], "remaining": ASK_DAILY_LIMIT - used - 1}
+        if out["message"].startswith(planner.PLAN_FAILED):  # our failure, not the question's: keep internals out
+            return {"status": "failed", "message": "The research service could not work on this question right now. "
+                                                   "Please try again later.", "remaining": remaining}
+        return {"status": out["status"], "message": out["message"], "remaining": remaining}
     report = out["report"]
     if out["status"] == "blocked":
-        return {"status": "blocked", "message": report.blocked_reason or "no answer could be shown",
-                "remaining": ASK_DAILY_LIMIT - used - 1}
+        return {"status": "blocked", "message": report.blocked_reason or "no answer could be shown", "remaining": remaining}
     dev_only = gate(report.public_ok)
+    pairs = [k.split(" ", 1) for k in report.agents]  # "M2 ACME" -> agent, subject
+    many = len({s for _, s in pairs}) > 1  # evidence ids carry "subject/agent" when the answer covers several
+    evidence = [{"agent_id": a, "subject": s, "prefix": f"{s}/{a}" if many else a, **_agent_slot(conn, a, s, as_of)}
+                for a, s in pairs]
     return {"status": out["status"], "dev_only": dev_only, "answer": report.model_dump(mode="json"),
-            "remaining": ASK_DAILY_LIMIT - used - 1}
+            "evidence": evidence, "remaining": remaining}

@@ -14,13 +14,16 @@ export const AGENT_TITLES: Record<string, string> = {
   MF3: "Closet-index check",
 };
 
-/** Short labels for citation chips: "M1:close" -> "Close". Unknown ids fall back to the agent title. */
-export function citeLabels(envelopes: Envelope[]): Map<string, string> {
+/** Short labels for citation chips: "M1:close" -> "Close". Citation ids start with the agent id, or with
+ * "SUBJECT/AGENT" when an answer covers several subjects: pass `prefixOf` for that. */
+export function citeLabels(envelopes: Envelope[], prefixOf: (e: Envelope) => string = (e) => e.agent_id): Map<string, string> {
   const out = new Map<string, string>();
   for (const e of envelopes) {
-    for (const m of e.metrics) out.set(`${e.agent_id}:${m.id}`, m.name);
-    for (const f of e.findings) out.set(`${e.agent_id}:finding:${f.id}`, `${AGENT_TITLES[e.agent_id] ?? e.agent_id}: finding`);
-    e.flags.forEach((_, i) => out.set(`${e.agent_id}:flag:${i}`, `${AGENT_TITLES[e.agent_id] ?? e.agent_id}: flag`));
+    const p = prefixOf(e);
+    const title = AGENT_TITLES[e.agent_id] ?? e.agent_id;
+    for (const m of e.metrics) out.set(`${p}:${m.id}`, p === e.agent_id ? m.name : `${e.subject}: ${m.name}`);
+    for (const f of e.findings) out.set(`${p}:finding:${f.id}`, `${title}: finding`);
+    e.flags.forEach((_, i) => out.set(`${p}:flag:${i}`, `${title}: flag`));
   }
   return out;
 }
@@ -51,7 +54,7 @@ export function CitedList({ items, labels, empty }: { items: CitedText[]; labels
 const SEVERITY = { info: "border-line text-muted", watch: "border-watch/60 text-watch", alert: "border-alert/60 text-alert" };
 
 /** One agent's result: metrics (each with its formula and source), findings, flags and what it could not compute. */
-export function AgentSection({ envelope: e }: { envelope: Envelope }) {
+export function AgentSection({ envelope: e, prefix = e.agent_id }: { envelope: Envelope; prefix?: string }) {
   const sources = new Map(e.sources.map((s) => [s.id, s]));
   return (
     <div className="space-y-4">
@@ -61,7 +64,7 @@ export function AgentSection({ envelope: e }: { envelope: Envelope }) {
       {e.flags.length > 0 && (
         <ul className="space-y-1">
           {e.flags.map((f, i) => (
-            <li key={i} id={anchorId(`${e.agent_id}:flag:${i}`)} className={`rounded border px-3 py-1.5 text-sm ${SEVERITY[f.severity]}`}>
+            <li key={i} id={anchorId(`${prefix}:flag:${i}`)} className={`rounded border px-3 py-1.5 text-sm ${SEVERITY[f.severity]}`}>
               <span className="mr-2 text-[11px] font-semibold uppercase tracking-wide">{f.severity}</span>
               <span className="text-foreground">{f.reason}</span>
             </li>
@@ -71,7 +74,7 @@ export function AgentSection({ envelope: e }: { envelope: Envelope }) {
       {e.findings.length > 0 && (
         <ul className="list-disc space-y-1 pl-5 text-sm">
           {e.findings.map((f) => (
-            <li key={f.id} id={anchorId(`${e.agent_id}:finding:${f.id}`)}>
+            <li key={f.id} id={anchorId(`${prefix}:finding:${f.id}`)}>
               {f.text}
             </li>
           ))}
@@ -90,7 +93,7 @@ export function AgentSection({ envelope: e }: { envelope: Envelope }) {
             {e.metrics.map((m) => {
               const src = sources.get(m.source_query_id);
               return (
-                <tr key={m.id} id={anchorId(`${e.agent_id}:${m.id}`)} className="border-b border-line align-top last:border-0">
+                <tr key={m.id} id={anchorId(`${prefix}:${m.id}`)} className="border-b border-line align-top last:border-0">
                   <td className="py-1.5 pr-3">{m.name}</td>
                   <td className="py-1.5 pr-3 text-right font-mono tabular-nums whitespace-nowrap">{formatValue(m.value, m.unit)}</td>
                   <td className="w-8 py-1.5 text-right">

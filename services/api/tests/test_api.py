@@ -212,15 +212,18 @@ def signed_in(monkeypatch):
     return {"Authorization": "Bearer good-token"}
 
 
-def fake_ask(db_conn, public_ok=True):
+def fake_ask(db_conn, public_ok=True, agents=None, fail=False):
     class R:
         def __init__(self):
             self.public_ok, self.blocked_reason = public_ok, None
+            self.agents = agents if agents is not None else {"M2 ACME": "ok"}
 
         def model_dump(self, mode):
             return {"summary": [{"text": "answer", "cites": ["M2:roe"]}]}
 
     def ask(conn, question, as_of, connect):
+        if fail:
+            raise RuntimeError("the planner crashed")
         (aid,) = conn.execute("INSERT INTO ask_answers (question, as_of, plan, status) VALUES (%s, %s, '{}', 'answered') RETURNING id",
                               (question, as_of)).fetchone()
         return {"id": aid, "status": "answered", "report": R()}
@@ -232,6 +235,7 @@ def test_ask_needs_firebase_and_a_valid_token(client, monkeypatch, signed_in):
     assert client.post("/api/ask", json={"question": "How has ACME grown?"}, headers=signed_in).status_code == 503
     monkeypatch.setattr(auth, "firebase_app", lambda: object())
     assert client.post("/api/ask", json={"question": "How has ACME grown?"}).status_code == 401
+    assert client.get("/api/ask/quota").status_code == 401
     bad = {"Authorization": "Bearer forged"}
     r = client.post("/api/ask", json={"question": "How has ACME grown?"}, headers=bad)
     assert r.status_code == 401 and r.json()["detail"] == "sign-in token is invalid or expired"
@@ -240,17 +244,50 @@ def test_ask_needs_firebase_and_a_valid_token(client, monkeypatch, signed_in):
 def test_ask_answers_and_enforces_the_daily_quota(client, db_conn, monkeypatch, signed_in):
     monkeypatch.setattr(main.orchestrator, "ask", fake_ask(db_conn))
     monkeypatch.setattr(main, "ASK_DAILY_LIMIT", 2)
+    assert client.get("/api/ask/quota", headers=signed_in).json() == {"limit": 2, "remaining": 2}
     r = client.post("/api/ask", json={"question": "How has ACME grown?"}, headers=signed_in)
     assert r.status_code == 200 and r.json()["answer"]["summary"][0]["text"] == "answer" and r.json()["remaining"] == 1
+    assert r.headers["cache-control"] == "private, no-store"
     assert db_conn.execute("SELECT user_id FROM ask_answers").fetchall() == [("user-1",)]
     assert client.post("/api/ask", json={"question": "And margins?"}, headers=signed_in).json()["remaining"] == 0
     r = client.post("/api/ask", json={"question": "One more?"}, headers=signed_in)
     assert r.status_code == 429 and "resets at midnight IST" in r.json()["detail"]
+    assert client.get("/api/ask/quota", headers=signed_in).json()["remaining"] == 0
     assert client.post("/api/ask", json={"question": "x" * 501}, headers=signed_in).status_code == 422
+
+
+def test_a_crashed_run_still_counts_against_the_quota(client, db_conn, monkeypatch, signed_in):
+    monkeypatch.setattr(main.orchestrator, "ask", fake_ask(db_conn, fail=True))
+    with pytest.raises(RuntimeError, match="planner crashed"):
+        client.post("/api/ask", json={"question": "How has ACME grown?"}, headers=signed_in)
+    assert client.get("/api/ask/quota", headers=signed_in).json()["remaining"] == main.ASK_DAILY_LIMIT - 1
+
+
+def test_ask_returns_the_evidence_with_citation_prefixes(client, db_conn, monkeypatch, signed_in):
+    today = datetime.now(IST).date()
+    stock(db_conn, "INE000000001", "ACME", "Acme")
+    report(db_conn, "stock:ACME", today, public_ok=True, agents=[("M2", "ACME", env("M2", "roe_avg"), True),
+                                                                 ("M2", "BETA", env("M2", "roe_avg"), False)])
+    monkeypatch.setattr(main.orchestrator, "ask", fake_ask(db_conn))
+    ev = client.post("/api/ask", json={"question": "How has ACME grown?"}, headers=signed_in).json()["evidence"]
+    assert [(e["prefix"], e["available"]) for e in ev] == [("M2", True)]  # one subject: ids are "M2:..."
+    assert ev[0]["envelope"]["metrics"][0]["formula"].startswith("Return on equity")
+
+    monkeypatch.setattr(main.orchestrator, "ask", fake_ask(db_conn, agents={"M2 ACME": "ok", "M2 BETA": "ok"}))
+    ev = client.post("/api/ask", json={"question": "Compare ACME and BETA"}, headers=signed_in).json()["evidence"]
+    assert [(e["prefix"], e["available"], e.get("reason")) for e in ev] == [
+        ("ACME/M2", True, None), ("BETA/M2", False, main.NOT_LICENSED)]  # several subjects: "ACME/M2:..."
+
+
+def test_planner_failure_is_reported_without_internals(client, monkeypatch, signed_in):
+    def ask(conn, question, as_of, connect):
+        return {"id": 1, "status": "needs_clarification", "message": f"{main.planner.PLAN_FAILED}: openai 401: AuthenticationError"}
+    monkeypatch.setattr(main.orchestrator, "ask", ask)
+    body = client.post("/api/ask", json={"question": "How has ACME grown?"}, headers=signed_in).json()
+    assert body["status"] == "failed" and "openai" not in body["message"].lower()
 
 
 def test_ask_answer_from_unlicensed_data_is_withheld(client, db_conn, monkeypatch, signed_in):
     monkeypatch.setattr(main.orchestrator, "ask", fake_ask(db_conn, public_ok=False))
     r = client.post("/api/ask", json={"question": "How has ACME grown?"}, headers=signed_in)
     assert r.status_code == 404 and r.json()["detail"] == main.NOT_LICENSED
-

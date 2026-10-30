@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
+import { AccountMenu, AuthProvider } from "@/components/Auth";
 import { DISCLAIMER } from "@/components/Notices";
 import "./globals.css";
 
@@ -16,16 +17,20 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased font-sans min-h-screen flex flex-col`}>
+        <AuthProvider>
         <header className="border-b border-line">
           <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between">
             <Link href="/" className="font-semibold tracking-tight text-lg">
               EdgeOS
             </Link>
             <nav className="flex items-center gap-4 text-sm">
+              <Link href="/ask" className="text-muted hover:text-foreground">
+                Ask
+              </Link>
               <Link href="/tools/overlap" className="text-muted hover:text-foreground">
                 Fund overlap
               </Link>
-              <span className="hidden text-xs text-muted sm:inline">Describes, never advises</span>
+              <AccountMenu />
             </nav>
           </div>
         </header>
@@ -33,6 +38,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <footer className="border-t border-line">
           <p className="mx-auto max-w-6xl px-4 py-4 text-xs text-muted leading-relaxed">{DISCLAIMER}</p>
         </footer>
+        </AuthProvider>
       </body>
     </html>
   );
